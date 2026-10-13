@@ -1,8 +1,8 @@
 # saa-cli
 
 AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 풀고, 답과 함께 확신도를 고르면 XP를 받는다.
-- 문제의 출처는 SAA-C03 기본 문제 번들 하나다. **이 저장소(public)에는 문제 데이터가 없다.** `saa quiz`를 실행했을 때 문제 폴더가 비어 있으면 `src/seed.ts`가 `SAA_SEED_FILE`(로컬 경로) 또는 `SAA_SEED_URL`(비공개 S3 객체의 presigned URL)에서 번들(`{questions, answers}`)을 받아 불러온다. 둘 다 없으면 아무것도 하지 않는다. 번들은 별도 풀이·검증 하네스(이 저장소 밖)에서 만든다. 불러올 때 확신도 low인 10문제는 빼고, 해설에는 `rationale_ko`만 넣는다. id와 파일 형식은 아래 "문제 파일 형식"을 따른다.
-- **문제 데이터, 버킷 이름, presigned URL은 저장소·패키지·공개된 곳에 절대 넣지 않는다.** URL은 사용자가 `scripts/seed-url.sh`로 직접 만들고 주기적으로 교체하며, 로컬 환경변수로만 쓴다.
+- 문제의 출처는 SAA-C03 기본 문제 번들 하나다. **이 저장소(public)에는 문제 데이터가 없다.** `saa quiz`를 실행했을 때 문제 폴더가 비어 있으면 접근 코드를 묻고(최대 3번), 코드 확인 서버(`infra/seed-gate`, Lambda Function URL, 주소는 `src/meta.ts`의 `SEED_GATE_URL`)가 비공개 S3 버킷의 번들(`{questions, answers}`)을 돌려준다. `SAA_SEED_FILE`(로컬 경로)이 설정돼 있으면 코드 대신 그 파일을 쓴다(오프라인·테스트용). 번들은 별도 풀이·검증 하네스(이 저장소 밖)에서 만든다. 불러올 때 확신도 low인 10문제는 빼고, 해설에는 `rationale_ko`만 넣는다. id와 파일 형식은 아래 "문제 파일 형식"을 따른다.
+- **문제 데이터, 버킷 이름, 접근 코드와 그 해시는 저장소·패키지·공개된 곳에 절대 넣지 않는다.** 코드는 사용자가 `scripts/set-code.sh`로 정하고 교체하며, 해시만 Lambda 환경변수 `CODE_SHA256`에 저장한다. 짐작하기 쉬운 코드(시험 코드, 이름 등)는 쓰지 않는다. 서버 주소는 그것만으로는 아무것도 받을 수 없으므로 코드에 둔다.
 - LLM은 쓰지 않는다. CLI는 지문, 선택지, 정답, 해설을 생성하지 않는다.
 - 모든 기록은 로컬 md 파일로 남긴다.
 - 작업명은 `saa-cli`, 실행 명령은 `saa`다. 이름은 바뀔 수 있으므로 `src/` 안의 상수 하나에서만 관리하고, 다른 곳에 하드코딩하지 않는다.
@@ -68,7 +68,7 @@ attempts:
 
 ## 명령 동작
 ### saa quiz
-1. 문제 폴더가 비어 있고 번들 출처가 설정돼 있으면 기본 문제를 불러오고 "기본 문제 N개를 불러왔습니다"를 보여준다. 받지 못하면(URL 만료 등) 경고 한 줄만 보여주고 계속한다. 그래도 문제가 없으면 SAA_SEED_URL(또는 SAA_SEED_FILE)을 설정하라고 안내하고 종료한다. 시작할 때 누적 XP를 보여준다.
+1. 시작할 때 intro를 보여준다. 문제 폴더가 비어 있으면 접근 코드를 묻는다(`SAA_SEED_FILE`이 있으면 그 파일). 틀린 코드는 "(n/3)" 경고 후 다시 묻고, 맞으면 "기본 문제 N개를 불러왔습니다"를 보여준다. 3번 틀리거나 네트워크 오류면 경고 후 "문제가 없습니다" 안내로 종료한다. 문제가 있으면 누적 XP를 보여준다.
 2. 출제 순서: (1) 한 번도 안 푼 문제 → (2) 마지막 시도가 오답인 문제 → (3) 마지막 시도가 가장 오래된 문제. 같은 그룹 안에서는 무작위로 고른다. 한 세션에서 같은 문제는 한 번만 낸다.
 3. 정답이 1개면 select, 2개 이상이면 multiselect를 쓴다. multiselect는 "N개를 고르세요"를 표시하고 정확히 N개를 골랐는지 검증한다.
 4. 확신도를 select로 묻는다. 각 선택지의 hint에 걸린 점수를 보여준다(예: "맞으면 +3 / 틀리면 −6").
@@ -90,7 +90,9 @@ src/
   store/resets.ts      # xp-resets.md 읽기·쓰기
   flows/quiz.ts, flows/xp.ts
   ui/confetti.ts       # 마일스톤 콘페티 (프레임 계산은 순수 함수)
-  seed.ts              # 문제 폴더가 비었을 때 기본 문제 번들(SAA_SEED_FILE / SAA_SEED_URL) 불러오기
+  seed.ts              # 기본 문제 번들 받기(접근 코드 → seed-gate, 또는 SAA_SEED_FILE)·검증·저장
+  util/code.ts         # 접근 코드 정규화 (infra/seed-gate, scripts/set-code.sh와 같은 규칙)
+infra/seed-gate/       # 접근 코드 확인 Lambda (scripts/deploy-gate.sh로 배포, scripts/set-code.sh로 코드 교체)
   util/hash.ts
 ```
 `package.json`의 bin은 `{ "saa": "dist/cli.js" }`다.

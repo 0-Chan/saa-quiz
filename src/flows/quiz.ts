@@ -1,7 +1,7 @@
-import { confirm, intro, log, multiselect, outro, select } from "@clack/prompts";
+import { confirm, intro, log, multiselect, outro, select, spinner, text } from "@clack/prompts";
 import { COMMAND } from "../meta.js";
 import { appendAttempt, loadAll, type Question } from "../store/questions.js";
-import { seedIfEmpty } from "../seed.js";
+import { fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type BundleResult } from "../seed.js";
 import { loadResets, saveResets, type ResetState } from "../store/resets.js";
 import { playConfetti } from "../ui/confetti.js";
 import { unwrap } from "../util/prompt.js";
@@ -76,20 +76,50 @@ async function offerReset(resets: ResetState, before: number, after: number, at:
   if (reset) log.success("누적 XP를 0으로 리셋했습니다.");
 }
 
+const CODE_TRIES = 3;
+
+/** First run: get the default questions with an access code (or from SAA_SEED_FILE). */
+async function seedDefaultQuestions(): Promise<void> {
+  const file = process.env.SAA_SEED_FILE;
+  let result: BundleResult | null = file ? await readBundleFile(file) : null;
+  if (!result) {
+    log.info("처음 실행입니다. 기본 문제를 받으려면 접근 코드를 입력하세요.");
+    for (let i = 1; i <= CODE_TRIES; i++) {
+      const code = unwrap(
+        await text({
+          message: "접근 코드",
+          placeholder: "word-word-word-00",
+          validate: (v) => (v?.trim() ? undefined : "코드를 입력하세요"),
+        }),
+      );
+      const s = spinner();
+      s.start("기본 문제를 받는 중");
+      result = await fetchBundleWithCode(code);
+      s.stop(result.ok ? "받았습니다" : "받지 못했습니다");
+      if (result.ok || !result.wrongCode) break;
+      if (i < CODE_TRIES) log.warn(`${result.reason} (${i}/${CODE_TRIES})`);
+    }
+  }
+  if (!result!.ok) {
+    log.warn(`기본 문제를 받지 못했습니다: ${result!.reason}`);
+    return;
+  }
+  const count = await saveBundle(result!.bundle, toLocalIso(new Date()));
+  log.success(`기본 문제 ${count}개를 불러왔습니다.`);
+}
+
 export async function runQuiz(): Promise<void> {
-  const seeded = await seedIfEmpty(toLocalIso(new Date()));
-  if (seeded.status === "seeded") log.info(`기본 문제 ${seeded.count}개를 불러왔습니다.`);
-  if (seeded.status === "failed") log.warn(`기본 문제를 받지 못했습니다: ${seeded.reason}`);
+  intro(`${COMMAND} quiz`);
+  if (!(await hasQuestions())) await seedDefaultQuestions();
   const { questions, warnings } = await loadAll();
   const { state: resets, warning } = await loadResets();
   for (const w of warning ? [...warnings, warning] : warnings) log.warn(w);
   const total = () => cumulativeXp(questions, resets.resets);
   if (!questions.length) {
-    log.info("문제가 없습니다. 기본 문제를 받으려면 SAA_SEED_URL(또는 SAA_SEED_FILE)을 설정한 뒤 다시 실행하세요.");
+    outro(`문제가 없습니다. 접근 코드를 확인한 뒤 \`${COMMAND} quiz\`를 다시 실행하세요.`);
     return;
   }
 
-  intro(`${COMMAND} quiz`);
   log.info(`누적 XP: ${signed(total())}`);
 
   const seen = new Set<string>();

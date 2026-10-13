@@ -17,16 +17,26 @@ Node.js 20 이상이 필요합니다.
 | `saa xp` | 누적 XP, 오늘 얻은 XP, 문제 수, 총 시도 수, 데이터 폴더를 보여줍니다. |
 
 ## 기본 문제
-이 저장소에는 문제 데이터가 들어 있지 않습니다. 처음 `saa quiz`를 실행할 때 문제 폴더가 비어 있으면, 아래 환경변수가 가리키는 문제 번들을 자동으로 한 번 불러옵니다. 둘 다 없으면 안내 메시지만 보여줍니다.
+이 저장소에는 문제 데이터가 들어 있지 않습니다. 처음 `saa quiz`를 실행하면 **접근 코드**를 묻습니다. 코드를 입력하면 기본 문제를 한 번 받아 오고 바로 퀴즈가 시작됩니다.
 
-```bash
-export SAA_SEED_FILE=/path/to/seed.json   # 로컬 파일
-export SAA_SEED_URL='https://…'           # 또는 URL (예: 비공개 S3 객체의 presigned URL)
-saa quiz                                   # 문제 폴더가 비어 있으면 번들을 불러온 뒤 시작
 ```
-- 번들 형식: `{"questions": [{"id", "stem", "options": {"A": …}}], "answers": [{"id", "answer": ["B"], "confidence": "high|medium|low", "rationale_ko"}]}`. 확신도 `low`는 건너뛰고, 해설에는 `rationale_ko`가 들어갑니다.
-- 문제가 하나라도 있으면 다시 불러오지 않습니다. 받지 못하면(URL 만료 등) 경고만 보여주고 계속합니다.
-- 비공개 S3에 번들을 두었다면 `SAA_SEED_BUCKET=<버킷> scripts/seed-url.sh`로 presigned URL(기본 7일)을 새로 만듭니다. URL은 커밋하거나 공개하지 마세요.
+◆  접근 코드
+│  maple river comet 07       ← 대소문자·띄어쓰기는 상관없습니다
+◆  기본 문제 674개를 불러왔습니다.
+```
+- 코드는 관리자에게 직접 받으세요. 3번 틀리면 종료되고, 다시 실행하면 또 물어봅니다.
+- 문제가 하나라도 있으면 다시 묻지 않습니다. 처음부터 다시 받고 싶으면 `questions/` 폴더를 비우세요(풀이 기록도 함께 지워집니다).
+- 오프라인이거나 번들 파일을 직접 가지고 있으면 `SAA_SEED_FILE=/path/to/seed.json saa quiz`로 코드 없이 불러올 수 있습니다.
+
+### 관리자용: 코드 서버
+코드 확인은 Lambda 함수(`infra/seed-gate`)가 합니다. 코드가 맞으면 비공개 S3 버킷의 번들을 돌려주고, 틀리면 1초 뒤 403을 돌려줍니다.
+```bash
+SAA_SEED_BUCKET=<버킷> scripts/deploy-gate.sh   # 함수·권한·Function URL 생성/갱신, URL 출력 → src/meta.ts의 SEED_GATE_URL
+scripts/set-code.sh                             # 새 무작위 코드 발급(교체). 이전 코드는 즉시 무효
+scripts/set-code.sh my-own-code-phrase          # 직접 정하기
+```
+- 코드는 해시만 Lambda 환경변수에 저장되고 화면에만 한 번 출력됩니다. **코드를 저장소나 공개된 곳에 적지 마세요.** 짐작하기 쉬운 코드(시험 코드 등)는 쓰지 마세요.
+- 번들 형식: `{"questions": [{"id", "stem", "options": {"A": …}}], "answers": [{"id", "answer": ["B"], "confidence": "high|medium|low", "rationale_ko"}]}`. 확신도 `low`는 건너뜁니다.
 
 ## XP 규칙 (CBM)
 | 확신도 | 정답 | 오답 |
@@ -51,6 +61,6 @@ saa quiz                                   # 문제 폴더가 비어 있으면 �
 ```bash
 npm run dev -- quiz                               # tsx로 바로 실행
 npm run typecheck && npm test                     # 작업을 끝내기 전 게이트
-SAA_DATA_DIR=$(mktemp -d) SAA_SEED_FILE=/path/to/seed.json npm run dev -- quiz   # 실제 데이터와 격리해서 테스트
+SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz     # 실제 데이터와 격리해서 테스트 (접근 코드 입력)
 ```
 규칙과 명세는 `AGENTS.md`, v0.1 구현 계획은 `docs/plans/saa-cli-v0.1.md`에 있습니다.

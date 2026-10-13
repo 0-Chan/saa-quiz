@@ -2,3 +2,5 @@
 export const APP_NAME = "saa-cli";
 export const COMMAND = "saa";
 export const VERSION = "0.1.0";
+// Access-code gate (infra/seed-gate) that hands out the default question bundle. The address alone grants nothing.
+export const SEED_GATE_URL = "https://xvhjnabylnpyqjwi7mdxwk5puy0ojfqb.lambda-url.ap-northeast-2.on.aws/";

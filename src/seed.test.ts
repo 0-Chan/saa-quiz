@@ -1,9 +1,10 @@
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildBundled, seedIfEmpty, type Bundle, type SourceQuestion } from "./seed.js";
-import { loadAll, saveNew } from "./store/questions.js";
+import { buildBundled, fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type Bundle, type SourceQuestion } from "./seed.js";
+import { loadAll } from "./store/questions.js";
+import { normalizeCode } from "./util/code.js";
 
 const at = "2026-10-13T09:00:00+09:00";
 
@@ -11,7 +12,7 @@ const bundle: Bundle = {
   questions: [
     { id: 1, stem: "Q one", options: { A: "a", B: "b" } },
     { id: 2, stem: "Q two", options: { A: "a", B: "b", C: "c" } },
-    { id: 3, stem: "Q three", options: { A: "a", B: "b", C: "c" } },
+    { id: 3, stem: "Q three", options: { A: "", B: "", C: "" } },
   ],
   answers: [
     { id: 1, answer: ["B"], confidence: "high", rationale_ko: "해설1" },
@@ -19,6 +20,15 @@ const bundle: Bundle = {
     { id: 3, answer: ["A"], confidence: "low", rationale_ko: "해설3" },
   ],
 };
+
+const respond = (body: string, status = 200) => (async () => new Response(body, { status })) as unknown as typeof fetch;
+
+describe("normalizeCode", () => {
+  it("ignores case, surrounding spaces, and spaces between words", () => {
+    expect(normalizeCode("  Igloo Hazel  BLUE 06 ")).toBe("igloo-hazel-blue-06");
+    expect(normalizeCode("igloo-hazel-blue-06")).toBe("igloo-hazel-blue-06");
+  });
+});
 
 describe("buildBundled", () => {
   it("skips low confidence, sorts answers, uses the Korean rationale", () => {
@@ -33,12 +43,37 @@ describe("buildBundled", () => {
   });
 });
 
-describe("seedIfEmpty", () => {
+describe("fetchBundleWithCode", () => {
+  it("sends the normalized code and parses the bundle", async () => {
+    let sent: RequestInit | undefined;
+    const spy = (async (_url: string, init: RequestInit) => ((sent = init), new Response(JSON.stringify(bundle)))) as unknown as typeof fetch;
+    const result = await fetchBundleWithCode(" Igloo Hazel ", spy, "https://gate.test/");
+    expect(result.ok).toBe(true);
+    expect(JSON.parse(String(sent?.body))).toEqual({ code: "igloo-hazel" });
+    expect(sent?.method).toBe("POST");
+  });
+  it("treats 403 as a wrong code", async () => {
+    expect(await fetchBundleWithCode("x", respond("forbidden", 403))).toEqual({ ok: false, reason: "코드가 틀렸습니다", wrongCode: true });
+  });
+  it("reports other HTTP errors and network failures without throwing", async () => {
+    expect(await fetchBundleWithCode("x", respond("oops", 500))).toEqual({ ok: false, reason: "HTTP 500", wrongCode: false });
+    const offline = (async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+    expect(await fetchBundleWithCode("x", offline)).toEqual({ ok: false, reason: "fetch failed", wrongCode: false });
+  });
+  it("rejects a malformed bundle", async () => {
+    expect(await fetchBundleWithCode("x", respond(JSON.stringify({ questions: "nope" })))).toEqual({
+      ok: false,
+      reason: "번들 형식 오류",
+      wrongCode: false,
+    });
+  });
+});
+
+describe("saving a bundle", () => {
   let root: string;
   let env: Record<string, string>;
-  const noFetch = (() => {
-    throw new Error("fetch should not be called");
-  }) as unknown as typeof fetch;
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), "saa-seed-"));
     env = { SAA_DATA_DIR: root };
@@ -47,39 +82,20 @@ describe("seedIfEmpty", () => {
     await rm(root, { recursive: true, force: true });
   });
 
-  it("does nothing without a configured source", async () => {
-    expect(await seedIfEmpty(at, env, noFetch)).toEqual({ status: "none" });
-  });
-
-  it("loads a local bundle into an empty folder, then skips", async () => {
+  it("reads a local bundle, saves it once, and reports the folder as non-empty", async () => {
     const file = join(root, "bundle.json");
     await writeFile(file, JSON.stringify(bundle));
-    const withFile = { ...env, SAA_SEED_FILE: file };
-    expect(await seedIfEmpty(at, withFile, noFetch)).toEqual({ status: "seeded", count: 2 });
+    const result = await readBundleFile(file);
+    if (!result.ok) throw new Error(result.reason);
+    expect(await hasQuestions(env)).toBe(false);
+    expect(await saveBundle(result.bundle, at, env)).toBe(2);
+    expect(await hasQuestions(env)).toBe(true);
+    expect(await saveBundle(result.bundle, at, env)).toBe(0);
     const { questions, warnings } = await loadAll(env);
     expect([questions.length, warnings]).toEqual([2, []]);
-    expect(await seedIfEmpty(at, withFile, noFetch)).toEqual({ status: "skipped" });
   });
 
-  it("loads from a URL", async () => {
-    const ok = (async () => new Response(JSON.stringify(bundle))) as unknown as typeof fetch;
-    expect(await seedIfEmpty(at, { ...env, SAA_SEED_URL: "https://example.test/b" }, ok)).toEqual({ status: "seeded", count: 2 });
-  });
-
-  it("reports an expired URL without throwing", async () => {
-    const denied = (async () => new Response("AccessDenied", { status: 403 })) as unknown as typeof fetch;
-    const result = await seedIfEmpty(at, { ...env, SAA_SEED_URL: "https://example.test/b" }, denied);
-    expect(result).toMatchObject({ status: "failed", reason: expect.stringContaining("403") });
-  });
-
-  it("reports a malformed bundle without saving anything", async () => {
-    const bad = (async () => new Response(JSON.stringify({ questions: "nope" }))) as unknown as typeof fetch;
-    expect(await seedIfEmpty(at, { ...env, SAA_SEED_URL: "https://example.test/b" }, bad)).toEqual({ status: "failed", reason: "번들 형식 오류" });
-    expect((await loadAll(env)).questions).toEqual([]);
-  });
-
-  it("does not touch a folder that already has questions", async () => {
-    await saveNew({ id: "3f9a2c1e", createdAt: at, choices: { A: "x", B: "y" }, answer: ["A"], attempts: [], stem: "s", explanation: "" }, env);
-    expect(await seedIfEmpty(at, { ...env, SAA_SEED_FILE: "/nonexistent" }, noFetch)).toEqual({ status: "skipped" });
+  it("reports a missing file without throwing", async () => {
+    expect(await readBundleFile(join(root, "nope.json"))).toMatchObject({ ok: false, wrongCode: false });
   });
 });

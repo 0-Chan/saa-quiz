@@ -1,9 +1,11 @@
-// Default questions are not shipped in this repo. On first run with an empty question folder they are
-// loaded from a bundle the user points to: SAA_SEED_FILE (local path) or SAA_SEED_URL (e.g. an S3 presigned URL).
+// Default questions are not shipped in this repo. On the first `saa quiz` with an empty question folder they are
+// fetched from the access-code gate (infra/seed-gate), or read from SAA_SEED_FILE when set (offline use, tests).
 import { readFile, readdir } from "node:fs/promises";
 import { z } from "zod";
+import { SEED_GATE_URL } from "./meta.js";
 import { questionsDir } from "./paths.js";
 import { saveNew, type Question } from "./store/questions.js";
+import { normalizeCode } from "./util/code.js";
 import { questionId } from "./util/hash.js";
 
 type Env = Record<string, string | undefined>;
@@ -39,33 +41,43 @@ export function buildBundled(sources: SourceQuestion[], answers: SolvedAnswer[],
     });
 }
 
-export type SeedResult =
-  | { status: "seeded"; count: number }
-  | { status: "skipped" } // folder already has questions
-  | { status: "none" } // no source configured
-  | { status: "failed"; reason: string };
+export type BundleResult = { ok: true; bundle: Bundle } | { ok: false; reason: string; wrongCode: boolean };
 
-async function readBundle(env: Env, fetchFn: typeof fetch): Promise<unknown> {
-  if (env.SAA_SEED_FILE) return JSON.parse(await readFile(env.SAA_SEED_FILE, "utf8"));
-  const res = await fetchFn(env.SAA_SEED_URL!);
-  if (!res.ok) throw new Error(`HTTP ${res.status}${res.status === 403 ? " (URL이 만료됐거나 잘못됨)" : ""}`);
-  return res.json();
+const describe = (error: unknown) =>
+  error instanceof z.ZodError ? "번들 형식 오류" : error instanceof Error ? error.message.split("\n")[0]! : String(error);
+
+export async function readBundleFile(path: string): Promise<BundleResult> {
+  try {
+    return { ok: true, bundle: bundleSchema.parse(JSON.parse(await readFile(path, "utf8"))) };
+  } catch (error) {
+    return { ok: false, reason: describe(error), wrongCode: false };
+  }
 }
 
-/** If the question folder has no question files and a source is configured, save the bundle's questions. */
-export async function seedIfEmpty(createdAt: string, env: Env = process.env, fetchFn: typeof fetch = fetch): Promise<SeedResult> {
-  const existing = await readdir(questionsDir(env)).catch(() => [] as string[]);
-  if (existing.some((name) => name.endsWith(".md"))) return { status: "skipped" };
-  if (!env.SAA_SEED_FILE && !env.SAA_SEED_URL) return { status: "none" };
-  let questions: Question[];
+/** Ask the gate for the bundle with an access code. 403 means a wrong code. */
+export async function fetchBundleWithCode(code: string, fetchFn: typeof fetch = fetch, url = SEED_GATE_URL): Promise<BundleResult> {
   try {
-    const bundle = bundleSchema.parse(await readBundle(env, fetchFn));
-    questions = buildBundled(bundle.questions, bundle.answers, createdAt);
+    const res = await fetchFn(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code: normalizeCode(code) }),
+    });
+    if (res.status === 403) return { ok: false, reason: "코드가 틀렸습니다", wrongCode: true };
+    if (!res.ok) return { ok: false, reason: `HTTP ${res.status}`, wrongCode: false };
+    return { ok: true, bundle: bundleSchema.parse(await res.json()) };
   } catch (error) {
-    const reason = error instanceof z.ZodError ? "번들 형식 오류" : error instanceof Error ? error.message.split("\n")[0]! : String(error);
-    return { status: "failed", reason };
+    return { ok: false, reason: describe(error), wrongCode: false };
   }
+}
+
+export async function hasQuestions(env: Env = process.env): Promise<boolean> {
+  const names = await readdir(questionsDir(env)).catch(() => [] as string[]);
+  return names.some((name) => name.endsWith(".md"));
+}
+
+/** Save the bundle's questions (existing files are kept). Returns how many were newly saved. */
+export async function saveBundle(bundle: Bundle, createdAt: string, env: Env = process.env): Promise<number> {
   let count = 0;
-  for (const q of questions) if ((await saveNew(q, env)) === "saved") count += 1;
-  return { status: "seeded", count };
+  for (const q of buildBundled(bundle.questions, bundle.answers, createdAt)) if ((await saveNew(q, env)) === "saved") count += 1;
+  return count;
 }
