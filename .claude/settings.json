@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(env -u NODE_OPTIONS npm *)",
+      "Bash(env -u NODE_OPTIONS node *)"
+    ]
+  }
+}

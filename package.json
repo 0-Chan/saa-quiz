@@ -1,0 +1,35 @@
+{
+  "name": "saa-cli",
+  "version": "0.1.0",
+  "description": "AWS SAA 시험 대비용 로컬 문제 풀이 CLI (확신도 기반 XP)",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "saa": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "@inquirer/editor": "^5.3.4",
+    "commander": "^15.0.0",
+    "gray-matter": "^4.0.3",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "files": [
+    "dist"
+  ]
+}
