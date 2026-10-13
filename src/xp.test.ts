@@ -6,9 +6,9 @@ const at = (iso: string, correct: boolean, confidence: number): XpAttempt => ({ 
 describe("CBM points", () => {
   it.each([
     [3, true, 3],
-    [3, false, -6],
+    [3, false, -2],
     [2, true, 2],
-    [2, false, -2],
+    [2, false, -1],
     [1, true, 1],
     [1, false, 0],
   ])("confidence %i, correct=%s → %i", (confidence, correct, expected) => {
@@ -45,8 +45,8 @@ describe("first attempt per day", () => {
         at("2026-10-08T23:00:00+09:00", true, 3),
       ],
     };
-    expect(attemptXps(q)).toEqual([-6, 0, 0]);
-    expect(totalXp([q])).toBe(-6);
+    expect(attemptXps(q)).toEqual([-2, 0, 0]);
+    expect(totalXp([q])).toBe(-2);
   });
 
   it("23:59 and 00:01 the next day are both first attempts", () => {
@@ -77,7 +77,7 @@ describe("first attempt per day", () => {
 describe("totals", () => {
   it("total XP can go negative", () => {
     const q = { attempts: [at("2026-10-08T09:00:00+09:00", false, 3), at("2026-10-09T09:00:00+09:00", false, 2)] };
-    expect(totalXp([q])).toBe(-8);
+    expect(totalXp([q])).toBe(-3);
   });
 
   it("xpOnDay sums only that local day, excluding repeat attempts", () => {
@@ -123,8 +123,8 @@ describe("negative milestones", () => {
 
   it("cumulativeXp adds reset adjustments so a reset lands exactly on 0", () => {
     const qs = [{ attempts: [at("2026-10-01T10:00:00+09:00", false, 3), at("2026-10-02T10:00:00+09:00", false, 3)] }];
-    expect(cumulativeXp(qs, [])).toBe(-12);
-    expect(cumulativeXp(qs, [{ adjust: 12 }])).toBe(0);
-    expect(cumulativeXp(qs, [{ adjust: 12 }, { adjust: 5 }])).toBe(5);
+    expect(cumulativeXp(qs, [])).toBe(-4);
+    expect(cumulativeXp(qs, [{ adjust: 4 }])).toBe(0);
+    expect(cumulativeXp(qs, [{ adjust: 4 }, { adjust: 5 }])).toBe(5);
   });
 });

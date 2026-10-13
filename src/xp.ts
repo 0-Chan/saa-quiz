@@ -4,9 +4,9 @@ export type Confidence = 1 | 2 | 3;
 
 /** Certainty-based marking table. */
 export const CBM: Record<Confidence, { label: string; correct: number; wrong: number }> = {
-  3: { label: "확실 (80% 이상)", correct: 3, wrong: -6 },
-  2: { label: "애매 (67~80%)", correct: 2, wrong: -2 },
-  1: { label: "자신 없음 (67% 미만)", correct: 1, wrong: 0 },
+  3: { label: "확실", correct: 3, wrong: -2 },
+  2: { label: "애매", correct: 2, wrong: -1 },
+  1: { label: "자신 없음", correct: 1, wrong: 0 },
 };
 
 export interface XpAttempt {
