@@ -25,8 +25,8 @@ const respond = (body: string, status = 200) => (async () => new Response(body, 
 
 describe("normalizeCode", () => {
   it("ignores case, surrounding spaces, and spaces between words", () => {
-    expect(normalizeCode("  Igloo Hazel  BLUE 06 ")).toBe("igloo-hazel-blue-06");
-    expect(normalizeCode("igloo-hazel-blue-06")).toBe("igloo-hazel-blue-06");
+    expect(normalizeCode("  Alpha Beta  GAMMA 01 ")).toBe("alpha-beta-gamma-01");
+    expect(normalizeCode("alpha-beta-gamma-01")).toBe("alpha-beta-gamma-01");
   });
 });
 
@@ -47,9 +47,9 @@ describe("fetchBundleWithCode", () => {
   it("sends the normalized code and parses the bundle", async () => {
     let sent: RequestInit | undefined;
     const spy = (async (_url: string, init: RequestInit) => ((sent = init), new Response(JSON.stringify(bundle)))) as unknown as typeof fetch;
-    const result = await fetchBundleWithCode(" Igloo Hazel ", spy, "https://gate.test/");
+    const result = await fetchBundleWithCode(" Alpha Beta ", spy, "https://gate.test/");
     expect(result.ok).toBe(true);
-    expect(JSON.parse(String(sent?.body))).toEqual({ code: "igloo-hazel" });
+    expect(JSON.parse(String(sent?.body))).toEqual({ code: "alpha-beta" });
     expect(sent?.method).toBe("POST");
   });
   it("treats 403 as a wrong code", async () => {
