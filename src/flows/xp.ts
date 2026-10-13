@@ -1,15 +1,11 @@
 import { log } from "@clack/prompts";
 import { dataDir } from "../paths.js";
 import { loadAll } from "../store/questions.js";
-import { seedIfEmpty } from "../seed.js";
 import { loadResets } from "../store/resets.js";
 import { localDay, toLocalIso } from "../util/time.js";
 import { cumulativeXp, xpOnDay } from "../xp.js";
 
 export async function runXp(): Promise<void> {
-  const seeded = await seedIfEmpty(toLocalIso(new Date()));
-  if (seeded.status === "seeded") log.info(`기본 문제 ${seeded.count}개를 불러왔습니다.`);
-  if (seeded.status === "failed") log.warn(`기본 문제를 받지 못했습니다: ${seeded.reason}`);
   const { questions, warnings } = await loadAll();
   const { state: resets, warning } = await loadResets();
   for (const w of warning ? [...warnings, warning] : warnings) log.warn(w);

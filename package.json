@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
-    "@inquirer/editor": "^5.3.4",
     "commander": "^15.0.0",
     "gray-matter": "^4.0.3",
     "zod": "^4.6.6"

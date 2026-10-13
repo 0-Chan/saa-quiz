@@ -17,7 +17,6 @@ export function unwrap<T>(value: T): Exclude<T, symbol> {
   return value as Exclude<T, symbol>;
 }
 
-/** @inquirer prompts reject with ExitPromptError on Ctrl+C. */
 export function isUserExit(error: unknown): boolean {
-  return error instanceof UserCancelled || (error instanceof Error && error.name === "ExitPromptError");
+  return error instanceof UserCancelled;
 }

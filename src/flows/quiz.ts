@@ -85,7 +85,7 @@ export async function runQuiz(): Promise<void> {
   for (const w of warning ? [...warnings, warning] : warnings) log.warn(w);
   const total = () => cumulativeXp(questions, resets.resets);
   if (!questions.length) {
-    log.info(`등록된 문제가 없습니다. 먼저 \`${COMMAND} add\`로 문제를 등록하세요.`);
+    log.info("문제가 없습니다. 기본 문제를 받으려면 SAA_SEED_URL(또는 SAA_SEED_FILE)을 설정한 뒤 다시 실행하세요.");
     return;
   }
 

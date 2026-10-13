@@ -1,6 +1,6 @@
 # saa-cli
 
-AWS SAA 시험 대비용 로컬 문제 풀이 CLI입니다. 직접 등록하거나 번들로 불러온 객관식 문제를 풀고, 답과 함께 **확신도**를 고르면 확신도 기반 채점(CBM) 규칙으로 XP를 받습니다. LLM은 쓰지 않고, 모든 기록은 로컬 md 파일로 남습니다.
+AWS SAA 시험 대비용 로컬 문제 풀이 CLI입니다. 문제 번들에서 불러온 SAA-C03 객관식 문제를 풀고, 답과 함께 **확신도**를 고르면 확신도 기반 채점(CBM) 규칙으로 XP를 받습니다. LLM은 쓰지 않고, 모든 기록은 로컬 md 파일로 남습니다.
 
 ## 설치
 ```bash
@@ -13,31 +13,11 @@ Node.js 20 이상이 필요합니다.
 ## 사용법
 | 명령 | 설명 |
 |---|---|
-| `saa add` | 에디터(`$VISUAL` 또는 `$EDITOR`, 없으면 vim)가 열립니다. 템플릿을 채우고 저장한 뒤 닫으면 문제가 등록됩니다. 입력이 잘못되면 이유를 보여주고 같은 내용으로 에디터를 다시 엽니다. 아무것도 쓰지 않고 닫으면 취소됩니다. |
-| `saa quiz` | 문제를 풉니다. 순서는 안 푼 문제 → 마지막에 틀린 문제 → 오래전에 푼 문제입니다. 답을 고르고 확신도를 선택하면 결과와 XP가 표시됩니다. Ctrl+C를 누르면 그때까지 저장된 기록만 남기고 종료합니다. |
+| `saa quiz` | 문제를 풉니다. 처음 실행할 때 문제 폴더가 비어 있으면 기본 문제를 자동으로 불러옵니다(아래 "기본 문제"). 순서는 안 푼 문제 → 마지막에 틀린 문제 → 오래전에 푼 문제입니다. 답을 고르고 확신도를 선택하면 결과와 XP가 표시됩니다. Ctrl+C를 누르면 그때까지 저장된 기록만 남기고 종료합니다. |
 | `saa xp` | 누적 XP, 오늘 얻은 XP, 문제 수, 총 시도 수, 데이터 폴더를 보여줍니다. |
 
-add 템플릿 예시:
-```
-## 문제
-Which AWS service provides shared NFS storage for many EC2 instances?
-
-## 선택지
-A. Amazon S3
-B. Amazon EFS
-C. Amazon EBS
-D. Instance store
-
-## 정답
-B            ← 복수 정답은 "A, B" 또는 "A B"
-
-## 해설 (선택)
-EFS is a regional NFS file system.
-```
-선택지는 `A.` 또는 `A)`로 시작합니다. 괄호로 된 안내문 줄과 비워 둔 선택지 줄은 무시됩니다.
-
-## 기본 문제 (선택)
-이 저장소에는 문제 데이터가 들어 있지 않습니다. `saa add`로 직접 등록하거나, 가진 문제 번들이 있으면 처음 실행할 때 자동으로 불러올 수 있습니다.
+## 기본 문제
+이 저장소에는 문제 데이터가 들어 있지 않습니다. 처음 `saa quiz`를 실행할 때 문제 폴더가 비어 있으면, 아래 환경변수가 가리키는 문제 번들을 자동으로 한 번 불러옵니다. 둘 다 없으면 안내 메시지만 보여줍니다.
 
 ```bash
 export SAA_SEED_FILE=/path/to/seed.json   # 로컬 파일
@@ -65,12 +45,12 @@ saa quiz                                   # 문제 폴더가 비어 있으면 �
 - 위치는 `$SAA_DATA_DIR`이고, 없으면 `~/saa-cli`를 씁니다. 문제는 `questions/<id>.md`에 하나씩 저장됩니다.
 - frontmatter에 `id`, `createdAt`, `choices`, `answer`, `attempts`가 있고, 본문에 `## 문제`와 `## 해설`이 있습니다. 직접 편집해도 됩니다. 형식이 깨진 파일은 경고 한 줄을 보여주고 건너뜁니다.
 - XP 리셋 기록은 데이터 폴더의 `xp-resets.md`에 남습니다(물어본 점수, 리셋 때 더한 XP).
-- `id`는 지문, 선택지, 정답의 해시(sha256 앞 8자리)입니다. 같은 내용을 다시 등록하면 "이미 등록된 문제"로 막힙니다.
+- `id`는 지문, 선택지, 정답의 해시(sha256 앞 8자리)입니다.
 
 ## 개발
 ```bash
 npm run dev -- quiz                               # tsx로 바로 실행
 npm run typecheck && npm test                     # 작업을 끝내기 전 게이트
-SAA_DATA_DIR=$(mktemp -d) npm run dev -- add      # 실제 데이터와 격리해서 테스트
+SAA_DATA_DIR=$(mktemp -d) SAA_SEED_FILE=/path/to/seed.json npm run dev -- quiz   # 실제 데이터와 격리해서 테스트
 ```
 규칙과 명세는 `AGENTS.md`, v0.1 구현 계획은 `docs/plans/saa-cli-v0.1.md`에 있습니다.
