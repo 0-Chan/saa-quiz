@@ -2,6 +2,14 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [Unreleased]
+### 추가
+- 오답노트: 틀린 문제를 모으고, 다른 날 맞히면 졸업합니다. "확실인데 틀림"과 "몰라서 틀림"으로 나눕니다.
+- `saa quiz` 시작 시 오답노트가 있으면 먼저 풀지 묻습니다.
+- 데이터 폴더에 `wrong-notes.md`를 자동으로 만듭니다(서비스별 요약, 문제별 내 선택 이력·정답·해설).
+- 문제마다 AWS 서비스와 SAA-C03 도메인 태그(새로 문제를 받을 때부터). 문제 머리에 태그를 보여줍니다.
+- `saa xp`에 오답노트 현황, 약한 서비스, 도메인별 정답률.
+
 ## [0.2.0] - 2026-10-14
 ### 추가
 - 풀이 시간 표시: 문제마다 결과 줄에 `정답입니다! 1분 12초만에 선택: B`, `오답입니다. 1분 12초만에 선택: C, E / 정답: C, D`(시험 기준 2분을 넘으면 표시), 세션 요약에 합계와 평균, `saa xp`에 오늘·누적 풀이 시간. 기존 기록에도 적용되며 한 문제는 최대 10분으로 셉니다.
@@ -19,6 +27,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[Unreleased]: https://github.com/0-Chan/saa-quiz/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/0-Chan/saa-quiz/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/0-Chan/saa-quiz/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/0-Chan/saa-quiz/releases/tag/v0.1.0

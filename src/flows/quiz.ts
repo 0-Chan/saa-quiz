@@ -2,7 +2,9 @@ import { confirm, intro, log, multiselect, outro, select, spinner, text } from "
 import { COMMAND } from "../meta.js";
 import { appendAttempt, loadAll, type Question } from "../store/questions.js";
 import { fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type BundleResult } from "../seed.js";
+import { writeWrongNotes } from "../store/notes.js";
 import { loadResets, saveResets, type ResetState } from "../store/resets.js";
+import { inReview, KIND_LABEL, pickReview, reviewSummary, tagLine } from "../review.js";
 import { countedMs, EXAM_PACE_MS, formatDuration } from "../study.js";
 import { playConfetti } from "../ui/confetti.js";
 import { unwrap } from "../util/prompt.js";
@@ -109,6 +111,30 @@ async function seedDefaultQuestions(): Promise<void> {
   log.success(`기본 문제 ${count}개를 불러왔습니다.`);
 }
 
+/** When the wrong-answer note has questions, ask whether to serve them first this session. */
+async function askReviewFirst(questions: Question[]): Promise<boolean> {
+  const s = reviewSummary(questions);
+  if (!s.total) return false;
+  return unwrap(
+    await select({
+      message: `오답노트에 ${s.total}문제가 있습니다 (${KIND_LABEL.confident} ${s.confident} / ${KIND_LABEL.unsure} ${s.unsure}). 먼저 풀까요?`,
+      options: [
+        { value: true, label: "오답노트 먼저" },
+        { value: false, label: "평소 순서대로" },
+      ],
+    }),
+  );
+}
+
+/** The attempt is already saved; a failed note write only warns. */
+async function saveWrongNotes(questions: Question[], at: string): Promise<void> {
+  try {
+    await writeWrongNotes(questions, at);
+  } catch (error) {
+    log.warn(`오답노트를 저장하지 못했습니다: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 export async function runQuiz(): Promise<void> {
   intro(`${COMMAND} quiz`);
   if (!(await hasQuestions())) await seedDefaultQuestions();
@@ -122,13 +148,16 @@ export async function runQuiz(): Promise<void> {
   }
 
   log.info(`누적 XP: ${signed(total())}`);
+  const reviewFirst = await askReviewFirst(questions);
 
   const seen = new Set<string>();
   const session = { solved: 0, correct: 0, xp: 0, ms: 0 };
+  const nextQuestion = () => (reviewFirst ? pickReview(questions, seen) : null) ?? pickNext(questions, seen);
 
-  for (let q = pickNext(questions, seen); q; q = pickNext(questions, seen)) {
+  for (let q = nextQuestion(); q; q = nextQuestion()) {
     seen.add(q.id);
-    log.message(`[${q.id}] ${q.stem}`);
+    const tags = tagLine(q);
+    log.message(`[${q.id}]${tags ? ` ${tags}` : ""}\n${q.stem}`);
 
     const shownAt = Date.now();
     const selected = await askAnswer(q);
@@ -141,8 +170,10 @@ export async function runQuiz(): Promise<void> {
     const xp = firstToday ? points(confidence, correct) : 0;
 
     const before = total();
+    const wasInReview = inReview(q);
     const updated = await appendAttempt(q.id, { at, answer: selected, correct, confidence, ms });
     questions[questions.indexOf(q)] = updated;
+    await saveWrongNotes(questions, at);
     session.solved += 1;
     session.correct += correct ? 1 : 0;
     session.xp += xp;
@@ -153,6 +184,7 @@ export async function runQuiz(): Promise<void> {
     const picked = `${formatDuration(ms)}만에 선택: ${labels(selected)}`;
     if (correct) log.success(`정답입니다! ${picked}${pace}`);
     else log.error(`오답입니다. ${picked} / 정답: ${labels(q.answer)}${pace}`);
+    if (wasInReview && !inReview(updated)) log.success("🎓 오답노트에서 졸업했습니다.");
     const after = total();
     const reached = crossedMilestone(before, after);
     if (reached !== null) {

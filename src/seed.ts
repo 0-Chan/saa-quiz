@@ -4,6 +4,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { z } from "zod";
 import { SEED_GATE_URL } from "./meta.js";
 import { questionsDir } from "./paths.js";
+import { DOMAINS } from "./review.js";
 import { saveNew, type Question } from "./store/questions.js";
 import { normalizeCode } from "./util/code.js";
 import { questionId } from "./util/hash.js";
@@ -20,15 +21,18 @@ const bundleSchema = z.object({
       answer: z.array(label).min(1),
       confidence: z.enum(["high", "medium", "low"]),
       rationale_ko: z.string(),
+      services: z.array(z.string().min(1)).default([]),
+      domain: z.enum(DOMAINS).optional(),
     }),
   ),
 });
 
-export type Bundle = z.infer<typeof bundleSchema>;
+// The shape as written in the bundle file; tags are optional so bundles from before tags still load.
+export type Bundle = z.input<typeof bundleSchema>;
 export type SourceQuestion = Bundle["questions"][number];
 export type SolvedAnswer = Bundle["answers"][number];
 
-/** Low-confidence answers are left out; the explanation is the Korean rationale only. */
+/** Low-confidence answers are left out; the explanation is the Korean rationale only. Tags pass through when present. */
 export function buildBundled(sources: SourceQuestion[], answers: SolvedAnswer[], createdAt: string): Question[] {
   const byId = new Map(sources.map((q) => [q.id, q]));
   return answers
@@ -37,7 +41,15 @@ export function buildBundled(sources: SourceQuestion[], answers: SolvedAnswer[],
       const source = byId.get(solved.id);
       if (!source) throw new Error(`Q${solved.id}: 번들 questions에 없음`);
       const content = { stem: source.stem, choices: source.options, answer: [...solved.answer].sort() };
-      return { ...content, id: questionId(content), createdAt, attempts: [], explanation: solved.rationale_ko };
+      return {
+        ...content,
+        id: questionId(content),
+        createdAt,
+        services: solved.services ?? [],
+        ...(solved.domain ? { domain: solved.domain } : {}),
+        attempts: [],
+        explanation: solved.rationale_ko,
+      };
     });
 }
 

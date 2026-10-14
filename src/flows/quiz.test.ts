@@ -7,6 +7,7 @@ const q = (id: string, attempts: { at: string; correct: boolean }[] = []): Quest
   createdAt: "2026-10-01T00:00:00+09:00",
   choices: { A: "1", B: "2" },
   answer: ["A"],
+  services: [],
   attempts: attempts.map((a) => ({ ...a, answer: ["A"], confidence: 2, ms: 1 })),
   stem: id,
   explanation: "",

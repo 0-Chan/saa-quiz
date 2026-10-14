@@ -20,6 +20,7 @@ const sample = (overrides: Partial<Question> = {}): Question => ({
   createdAt: "2026-10-08T14:32:00+09:00",
   choices: { A: "S3: object storage", B: "EFS", C: "EBS", D: "FSx" },
   answer: ["B"],
+  services: [],
   attempts: [],
   stem: "Which is shared file storage?\nSecond line.",
   explanation: "EFS is NFS.",
@@ -42,6 +43,19 @@ describe("store round trip", () => {
     expect(questions[0]!.attempts).toHaveLength(2);
     expect(questions[0]!.attempts[1]).toMatchObject({ answer: ["B"], correct: true });
     expect(questions[0]!.stem).toBe(sample().stem);
+  });
+
+  it("keeps services and domain through appendAttempt; files without tags load with none", async () => {
+    await saveNew(sample({ services: ["EFS", "EC2"], domain: "resilient" }), env);
+    await saveNew(sample({ id: "0000aaaa" }), env);
+    await appendAttempt("3f9a2c1e", { at: "2026-10-08T15:01:00+09:00", answer: ["B"], correct: true, confidence: 2, ms: 1 }, env);
+    const { questions } = await loadAll(env);
+    expect(questions.find((q) => q.id === "3f9a2c1e")).toMatchObject({ services: ["EFS", "EC2"], domain: "resilient" });
+    const untagged = questions.find((q) => q.id === "0000aaaa")!;
+    expect(untagged.services).toEqual([]);
+    expect(untagged.domain).toBeUndefined();
+    const text = await readFile(join(root, "questions", "0000aaaa.md"), "utf8");
+    expect(text).not.toContain("services");
   });
 
   it("writes timestamps as quoted strings", async () => {

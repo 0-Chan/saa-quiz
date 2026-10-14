@@ -3,6 +3,7 @@ import { join } from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { questionsDir } from "../paths.js";
+import { DOMAINS, type Domain } from "../review.js";
 import { toLocalIso } from "../util/time.js";
 
 type Env = Record<string, string | undefined>;
@@ -25,6 +26,8 @@ const frontmatterSchema = z
     createdAt: isoTime,
     choices: z.record(label, z.string().min(1)),
     answer: z.array(label).min(1),
+    services: z.array(z.string().min(1)).default([]),
+    domain: z.enum(DOMAINS).optional(),
     attempts: z.array(attemptSchema).default([]),
   })
   .refine((q) => Object.keys(q.choices).length >= 2, { message: "선택지가 2개 이상 필요합니다" })
@@ -37,6 +40,9 @@ export interface Question {
   createdAt: string;
   choices: Record<string, string>;
   answer: string[];
+  /** AWS services the question is about (from the bundle; empty for questions seeded before tags existed). */
+  services: string[];
+  domain?: Domain;
   attempts: Attempt[];
   stem: string;
   explanation: string;
@@ -61,7 +67,15 @@ function renderBody(q: Pick<Question, "stem" | "explanation">): string {
 }
 
 function serialize(q: Question): string {
-  const data = { id: q.id, createdAt: q.createdAt, choices: q.choices, answer: q.answer, attempts: q.attempts };
+  const data = {
+    id: q.id,
+    createdAt: q.createdAt,
+    choices: q.choices,
+    answer: q.answer,
+    ...(q.services.length ? { services: q.services } : {}),
+    ...(q.domain ? { domain: q.domain } : {}),
+    attempts: q.attempts,
+  };
   return matter.stringify(renderBody(q), data);
 }
 

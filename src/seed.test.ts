@@ -37,6 +37,14 @@ describe("buildBundled", () => {
     expect(qs[1]).toMatchObject({ answer: ["A", "C"], explanation: "해설2", createdAt: at, attempts: [] });
     expect(qs[0]!.id).toMatch(/^[0-9a-f]{8}$/);
   });
+  it("passes tags through and defaults to none for bundles without tags", () => {
+    const tagged = buildBundled(bundle.questions, [{ ...bundle.answers[0]!, services: ["S3"], domain: "cost" }], at);
+    expect(tagged[0]).toMatchObject({ services: ["S3"], domain: "cost" });
+    const plain = buildBundled(bundle.questions, [bundle.answers[0]!], at);
+    expect(plain[0]!.services).toEqual([]);
+    expect(plain[0]).not.toHaveProperty("domain");
+    expect(plain[0]!.id).toBe(tagged[0]!.id);
+  });
   it("fails loudly when an answer has no source question", () => {
     const sources: SourceQuestion[] = bundle.questions;
     expect(() => buildBundled(sources, [{ id: 9, answer: ["A"], confidence: "high", rationale_ko: "" }], at)).toThrow("Q9");
