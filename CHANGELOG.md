@@ -2,7 +2,7 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
-## [Unreleased]
+## [0.3.0] - 2026-10-14
 ### 추가
 - 오답노트: 틀린 문제를 모으고, 다른 날 맞히면 졸업합니다. "확실인데 틀림"과 "몰라서 틀림"으로 나눕니다.
 - `saa quiz` 시작 시 오답노트가 있으면 먼저 풀지 묻습니다.
@@ -27,7 +27,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
-[Unreleased]: https://github.com/0-Chan/saa-quiz/compare/v0.2.0...HEAD
+[0.3.0]: https://github.com/0-Chan/saa-quiz/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/0-Chan/saa-quiz/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/0-Chan/saa-quiz/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/0-Chan/saa-quiz/releases/tag/v0.1.0
