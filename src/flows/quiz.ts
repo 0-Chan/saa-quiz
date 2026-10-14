@@ -148,8 +148,11 @@ export async function runQuiz(): Promise<void> {
     session.xp += xp;
     session.ms += countedMs(ms);
 
-    if (correct) log.success("정답입니다!");
-    else log.error(`오답입니다. (선택: ${[...selected].sort().join(", ")} / 정답: ${[...q.answer].sort().join(", ")})`);
+    const labels = (xs: string[]) => [...xs].sort().join(", ");
+    const pace = ms > EXAM_PACE_MS ? ` (시험 기준 ${formatDuration(EXAM_PACE_MS)} 초과)` : "";
+    const picked = `${formatDuration(ms)}만에 선택: ${labels(selected)}`;
+    if (correct) log.success(`정답입니다! ${picked}${pace}`);
+    else log.error(`오답입니다. ${picked} / 정답: ${labels(q.answer)}${pace}`);
     const after = total();
     const reached = crossedMilestone(before, after);
     if (reached !== null) {
@@ -160,7 +163,6 @@ export async function runQuiz(): Promise<void> {
       [
         firstToday ? `이번 XP: ${signed(xp)}` : "오늘 이미 시도한 문제라 XP 없음",
         `누적 XP: ${signed(total())}`,
-        `풀이 시간: ${formatDuration(ms)}${ms > EXAM_PACE_MS ? ` (시험 기준 ${formatDuration(EXAM_PACE_MS)} 초과)` : ""}`,
         `정답: ${q.answer.map((label) => `${label}. ${q.choices[label]}`).join(" / ")}`,
         ...(q.explanation ? [`해설: ${q.explanation}`] : []),
       ].join("\n"),
