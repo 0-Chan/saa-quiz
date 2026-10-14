@@ -164,17 +164,28 @@ export async function runQuiz(): Promise<void> {
     );
     await offerReset(resets, before, after, at);
 
-    if (!pickNext(questions, seen)) break;
-    const next = unwrap(
-      await select({
-        message: "계속할까요?",
-        options: [
-          { value: "next", label: "다음 문제" },
-          { value: "quit", label: "종료" },
-        ],
-      }),
-    );
-    if (next === "quit") break;
+    const hasNext = pickNext(questions, seen) !== null;
+    // A wrong answer can reveal the chosen options once, even on the last question.
+    let canShowMine = !correct;
+    if (!hasNext && !canShowMine) break;
+    let next: "next" | "mine" | "quit";
+    do {
+      next = unwrap(
+        await select<"next" | "mine" | "quit">({
+          message: hasNext ? "계속할까요?" : "마지막 문제입니다.",
+          options: [
+            ...(hasNext ? [{ value: "next" as const, label: "다음 문제" }] : []),
+            ...(canShowMine ? [{ value: "mine" as const, label: "내가 고른 선택지 보기" }] : []),
+            { value: "quit" as const, label: "종료" },
+          ],
+        }),
+      );
+      if (next === "mine") {
+        log.message(`내 선택: ${[...selected].sort().map((label) => `${label}. ${q.choices[label]}`).join(" / ")}`);
+        canShowMine = false;
+      }
+    } while (next === "mine" && hasNext);
+    if (next !== "next") break;
   }
 
   outro(
