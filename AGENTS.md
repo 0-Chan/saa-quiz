@@ -5,7 +5,7 @@ AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 �
 - **문제 데이터, 버킷 이름, 접근 코드와 그 해시는 저장소·패키지·공개된 곳에 절대 넣지 않는다.** 코드는 사용자가 `scripts/set-code.sh`로 정하고 교체하며, 해시만 Lambda 환경변수 `CODE_SHA256`에 저장한다. 짐작하기 쉬운 코드(시험 코드, 이름 등)는 쓰지 않는다. 서버 주소는 그것만으로는 아무것도 받을 수 없으므로 코드에 둔다.
 - LLM은 쓰지 않는다. CLI는 지문, 선택지, 정답, 해설을 생성하지 않는다.
 - 모든 기록은 로컬 md 파일로 남긴다.
-- 작업명은 `saa-quiz`, 실행 명령은 `saa`다. 이름은 바뀔 수 있으므로 `src/` 안의 상수 하나에서만 관리하고, 다른 곳에 하드코딩하지 않는다.
+- 작업명(npm 패키지명)은 `saa-quiz`, 실행 명령은 `saa`다. 코드 안에서는 이름과 버전을 `src/meta.ts`의 상수(`APP_NAME`, `COMMAND`, `VERSION`)로만 쓰고 하드코딩하지 않는다. 예외로 `package.json`(name, version, bin)과 문서(README, CHANGELOG)에는 직접 적는다.
 
 ## 범위
 명령은 두 개뿐이다: `saa quiz`(문제 풀이), `saa xp`(XP 현황). 문제 등록 명령은 없다. 기본 문제 불러오기는 명령이 아니라 `saa quiz`를 실행했을 때 문제 폴더가 비어 있으면 한 번 자동으로 일어난다. 문제가 하나라도 있으면 아무것도 하지 않는다.
@@ -13,7 +13,7 @@ AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 �
 **만들지 않는 것.** 확장을 대비한 추상화나 빈 껍데기 코드도 만들지 않는다.
 - LLM 연동(문제 파싱, 풀이, 해설·노트 생성), API 키 설정
 - XP 외의 게임 요소(레벨, 연속 학습일, 업적, 숙련도, 퀘스트)
-- 간격 반복 알고리즘, Ink UI, 외부 저장소(기본 문제 번들을 한 번 읽어 오는 것만 예외), npm 배포
+- 간격 반복 알고리즘, Ink UI, 외부 저장소(기본 문제 번들을 한 번 읽어 오는 것만 예외)
 
 ## 스택
 - Node.js 20 이상, TypeScript, ESM(`"type": "module"`), npm
@@ -84,6 +84,7 @@ attempts:
 ```
 src/
   cli.ts               # commander 진입점, shebang 포함
+  meta.ts              # APP_NAME, COMMAND, VERSION, SEED_GATE_URL
   paths.ts             # 데이터 폴더 경로
   xp.ts                # XP 계산 (순수 함수)
   store/questions.ts   # 문제 파일 읽기·쓰기, attempt 추가, zod 검증
@@ -92,8 +93,11 @@ src/
   ui/confetti.ts       # 마일스톤 콘페티 (프레임 계산은 순수 함수)
   seed.ts              # 기본 문제 번들 받기(접근 코드 → seed-gate, 또는 SAA_SEED_FILE)·검증·저장
   util/code.ts         # 접근 코드 정규화 (infra/seed-gate, scripts/set-code.sh와 같은 규칙)
-infra/seed-gate/       # 접근 코드 확인 Lambda (scripts/deploy-gate.sh로 배포, scripts/set-code.sh로 코드 교체)
-  util/hash.ts
+  util/hash.ts         # 문제 id 해시
+  util/prompt.ts       # clack 프롬프트 취소(Ctrl+C) 처리
+  util/time.ts         # 로컬 타임존 ISO 시각, 로컬 날짜
+infra/seed-gate/
+  index.mjs            # 접근 코드 확인 Lambda (scripts/deploy-gate.sh로 배포, scripts/set-code.sh로 코드 교체)
 ```
 `package.json`의 bin은 `{ "saa": "dist/cli.js" }`다.
 
@@ -114,9 +118,9 @@ SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz   # 실제 데이터와 격리해�
 
 ## 릴리스
 1. `package.json`(`npm version X.Y.Z --no-git-tag-version`)과 `src/meta.ts`의 `VERSION`을 함께 올린다.
-2. `CHANGELOG.md` 맨 위에 항목을 추가하고 아래 비교 링크를 갱신한다.
+2. `CHANGELOG.md` 맨 위에 항목을 추가하고 아래 비교 링크를 갱신한다. CHANGELOG는 `package.json`의 `files`에 들어 있어 npm 패키지에도 포함된다.
 3. `Release X.Y.Z`로 커밋하고 annotated 태그 `vX.Y.Z`를 단 뒤 `git push origin main --follow-tags`.
-4. `npm publish`(prepublishOnly가 test·build를 돌림, 패스키 승인 필요).
+4. `npm publish`(prepublishOnly가 test·build를 돌림). 패스키 승인이 필요하므로 **사용자가 별도 터미널에서** 실행한다. Claude Code의 `!`로 실행하면 TTY가 없어 인증을 기다리지 않고 `EOTP`로 실패한다.
 5. `gh release create vX.Y.Z`에 CHANGELOG의 해당 항목을 노트로 넣는다.
 
 ## 관련 문서
