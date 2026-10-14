@@ -2,6 +2,10 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [Unreleased]
+### 추가
+- 풀이 시간 표시: 문제마다 결과에 풀이 시간(시험 기준 2분을 넘으면 표시), 세션 요약에 합계와 평균, `saa xp`에 오늘·누적 풀이 시간. 기존 기록에도 적용되며 한 문제는 최대 10분으로 셉니다.
+
 ## [0.1.1] - 2026-10-14
 ### 추가
 - 오답이면 "계속할까요?" 메뉴에서 "내가 고른 선택지 보기"로 고른 선택지의 내용을 볼 수 있습니다.
@@ -15,5 +19,6 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[Unreleased]: https://github.com/0-Chan/saa-quiz/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/0-Chan/saa-quiz/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/0-Chan/saa-quiz/releases/tag/v0.1.0

@@ -3,6 +3,7 @@ import { COMMAND } from "../meta.js";
 import { appendAttempt, loadAll, type Question } from "../store/questions.js";
 import { fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type BundleResult } from "../seed.js";
 import { loadResets, saveResets, type ResetState } from "../store/resets.js";
+import { countedMs, EXAM_PACE_MS, formatDuration } from "../study.js";
 import { playConfetti } from "../ui/confetti.js";
 import { unwrap } from "../util/prompt.js";
 import { toLocalIso } from "../util/time.js";
@@ -123,7 +124,7 @@ export async function runQuiz(): Promise<void> {
   log.info(`누적 XP: ${signed(total())}`);
 
   const seen = new Set<string>();
-  const session = { solved: 0, correct: 0, xp: 0 };
+  const session = { solved: 0, correct: 0, xp: 0, ms: 0 };
 
   for (let q = pickNext(questions, seen); q; q = pickNext(questions, seen)) {
     seen.add(q.id);
@@ -145,6 +146,7 @@ export async function runQuiz(): Promise<void> {
     session.solved += 1;
     session.correct += correct ? 1 : 0;
     session.xp += xp;
+    session.ms += countedMs(ms);
 
     if (correct) log.success("정답입니다!");
     else log.error(`오답입니다. (선택: ${[...selected].sort().join(", ")} / 정답: ${[...q.answer].sort().join(", ")})`);
@@ -158,6 +160,7 @@ export async function runQuiz(): Promise<void> {
       [
         firstToday ? `이번 XP: ${signed(xp)}` : "오늘 이미 시도한 문제라 XP 없음",
         `누적 XP: ${signed(total())}`,
+        `풀이 시간: ${formatDuration(ms)}${ms > EXAM_PACE_MS ? ` (시험 기준 ${formatDuration(EXAM_PACE_MS)} 초과)` : ""}`,
         `정답: ${q.answer.map((label) => `${label}. ${q.choices[label]}`).join(" / ")}`,
         ...(q.explanation ? [`해설: ${q.explanation}`] : []),
       ].join("\n"),
@@ -190,6 +193,9 @@ export async function runQuiz(): Promise<void> {
 
   outro(
     `세션 요약 — 푼 문제 ${session.solved}개, 정답 ${session.correct}개, ` +
-      `세션 XP ${signed(session.xp)}, 누적 XP ${signed(total())}`,
+      `세션 XP ${signed(session.xp)}, 누적 XP ${signed(total())}` +
+      (session.solved
+        ? `, 풀이 시간 ${formatDuration(session.ms)} (평균 ${formatDuration(session.ms / session.solved)})`
+        : ""),
   );
 }
