@@ -88,7 +88,7 @@ async function seedDefaultQuestions(): Promise<void> {
       const code = unwrap(
         await text({
           message: "접근 코드",
-          placeholder: "word-word-word-00",
+          placeholder: "xxx-xxx",
           validate: (v) => (v?.trim() ? undefined : "코드를 입력하세요"),
         }),
       );
