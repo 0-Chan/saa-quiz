@@ -4,9 +4,7 @@ AWS SAA 시험 대비용 로컬 문제 풀이 CLI입니다. 문제 번들에서 
 
 ## 설치
 ```bash
-npm install
-npm run build
-npm link        # 이후 어디서든 `saa` 명령 사용
+npm install -g saa-quiz   # 이후 어디서든 `saa` 명령 사용
 ```
 Node.js 20 이상이 필요합니다.
 
@@ -21,7 +19,7 @@ Node.js 20 이상이 필요합니다.
 
 ```
 ◆  접근 코드
-│  maple river comet 07       ← 대소문자·띄어쓰기는 상관없습니다
+│  xxx-xxx                    ← 관리자에게 받은 코드
 ◆  기본 문제 674개를 불러왔습니다.
 ```
 - 코드는 관리자에게 직접 받으세요. 3번 틀리면 종료되고, 다시 실행하면 또 물어봅니다.
@@ -59,6 +57,7 @@ scripts/set-code.sh my-own-code-phrase          # 직접 정하기
 
 ## 개발
 ```bash
+npm install && npm run build && npm link          # 소스에서 `saa` 명령 설치
 npm run dev -- quiz                               # tsx로 바로 실행
 npm run typecheck && npm test                     # 작업을 끝내기 전 게이트
 SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz     # 실제 데이터와 격리해서 테스트 (접근 코드 입력)

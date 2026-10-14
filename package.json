@@ -2,8 +2,24 @@
   "name": "saa-quiz",
   "version": "0.1.0",
   "description": "AWS SAA 시험 대비용 로컬 문제 풀이 CLI (확신도 기반 XP)",
+  "keywords": [
+    "aws",
+    "saa-c03",
+    "quiz",
+    "cli",
+    "certification"
+  ],
+  "license": "MIT",
+  "author": "0Chan-smc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0-Chan/saa-quiz.git"
+  },
+  "homepage": "https://github.com/0-Chan/saa-quiz#readme",
+  "bugs": {
+    "url": "https://github.com/0-Chan/saa-quiz/issues"
+  },
   "type": "module",
-  "private": true,
   "bin": {
     "saa": "dist/cli.js"
   },
@@ -14,7 +30,8 @@
     "dev": "tsx src/cli.ts",
     "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
