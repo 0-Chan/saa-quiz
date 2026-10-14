@@ -112,5 +112,12 @@ npm test                      # vitest
 SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz   # 실제 데이터와 격리해서 수동 테스트
 ```
 
+## 릴리스
+1. `package.json`(`npm version X.Y.Z --no-git-tag-version`)과 `src/meta.ts`의 `VERSION`을 함께 올린다.
+2. `CHANGELOG.md` 맨 위에 항목을 추가하고 아래 비교 링크를 갱신한다.
+3. `Release X.Y.Z`로 커밋하고 annotated 태그 `vX.Y.Z`를 단 뒤 `git push origin main --follow-tags`.
+4. `npm publish`(prepublishOnly가 test·build를 돌림, 패스키 승인 필요).
+5. `gh release create vX.Y.Z`에 CHANGELOG의 해당 항목을 노트로 넣는다.
+
 ## 관련 문서
 - `docs/plans/saa-quiz-v0.1.md`: v0.1 구현 단계, 완료 기준, 명세에서 확정한 결정
