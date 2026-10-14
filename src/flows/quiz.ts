@@ -147,7 +147,7 @@ export async function runQuiz(): Promise<void> {
     session.xp += xp;
 
     if (correct) log.success("정답입니다!");
-    else log.error(`오답입니다. (선택: ${selected.join(", ")})`);
+    else log.error(`오답입니다. (선택: ${[...selected].sort().join(", ")} / 정답: ${[...q.answer].sort().join(", ")})`);
     const after = total();
     const reached = crossedMilestone(before, after);
     if (reached !== null) {
