@@ -1,11 +1,11 @@
-# saa-cli v0.1 구현 계획
+# saa-quiz v0.1 구현 계획
 
 > v0.1 이후 변경: `saa add`(에디터 등록)와 템플릿 파서는 제거됐다. 문제는 `saa quiz` 첫 실행 때 번들(SAA_SEED_URL / SAA_SEED_FILE)에서만 불러온다. 아래 add 관련 내용은 v0.1 당시 기록이다.
 
 지속 규칙(범위, 형식, XP, 흐름, 구조, 품질)은 루트 `AGENTS.md`에 있다. 이 문서는 v0.1을 처음 구현할 때만 쓰는 지시와 완료 기준이다.
 
 ## 역할
-Node.js/TypeScript CLI 개발자로서 `AGENTS.md`의 명세대로 saa-cli 첫 버전(v0.1)을 만든다.
+Node.js/TypeScript CLI 개발자로서 `AGENTS.md`의 명세대로 saa-quiz 첫 버전(v0.1)을 만든다.
 
 ## 구현 단계
 각 단계가 끝날 때마다 `npm run typecheck`와 `npm test`를 통과시킨 뒤 다음 단계로 넘어간다.

@@ -1,4 +1,4 @@
-# saa-cli
+# saa-quiz
 
 AWS SAA 시험 대비용 로컬 문제 풀이 CLI입니다. 문제 번들에서 불러온 SAA-C03 객관식 문제를 풀고, 답과 함께 **확신도**를 고르면 확신도 기반 채점(CBM) 규칙으로 XP를 받습니다. LLM은 쓰지 않고, 모든 기록은 로컬 md 파일로 남습니다.
 
@@ -52,7 +52,7 @@ scripts/set-code.sh my-own-code-phrase          # 직접 정하기
 - XP는 따로 저장하지 않고, 매번 문제 파일의 시도 기록에서 다시 계산합니다. 누적 XP는 음수가 될 수 있습니다.
 
 ## 데이터
-- 위치는 `$SAA_DATA_DIR`이고, 없으면 `~/saa-cli`를 씁니다. 문제는 `questions/<id>.md`에 하나씩 저장됩니다.
+- 위치는 `$SAA_DATA_DIR`이고, 없으면 `~/saa-quiz`를 씁니다. 문제는 `questions/<id>.md`에 하나씩 저장됩니다.
 - frontmatter에 `id`, `createdAt`, `choices`, `answer`, `attempts`가 있고, 본문에 `## 문제`와 `## 해설`이 있습니다. 직접 편집해도 됩니다. 형식이 깨진 파일은 경고 한 줄을 보여주고 건너뜁니다.
 - XP 리셋 기록은 데이터 폴더의 `xp-resets.md`에 남습니다(물어본 점수, 리셋 때 더한 XP).
 - `id`는 지문, 선택지, 정답의 해시(sha256 앞 8자리)입니다.
@@ -63,4 +63,4 @@ npm run dev -- quiz                               # tsx로 바로 실행
 npm run typecheck && npm test                     # 작업을 끝내기 전 게이트
 SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz     # 실제 데이터와 격리해서 테스트 (접근 코드 입력)
 ```
-규칙과 명세는 `AGENTS.md`, v0.1 구현 계획은 `docs/plans/saa-cli-v0.1.md`에 있습니다.
+규칙과 명세는 `AGENTS.md`, v0.1 구현 계획은 `docs/plans/saa-quiz-v0.1.md`에 있습니다.
