@@ -156,8 +156,7 @@ export async function runQuiz(): Promise<void> {
 
   for (let q = nextQuestion(); q; q = nextQuestion()) {
     seen.add(q.id);
-    const tags = tagLine(q);
-    log.message(`[${q.id}]${tags ? ` ${tags}` : ""}\n${q.stem}`);
+    log.message(`[${q.id}]\n${q.stem}`);
 
     const shownAt = Date.now();
     const selected = await askAnswer(q);
@@ -191,10 +190,13 @@ export async function runQuiz(): Promise<void> {
       await playConfetti();
       log.success(`🎉 누적 XP ${reached} 달성!`);
     }
+    // Tags hint at the answer, so they appear only after it is submitted.
+    const tags = tagLine(q);
     log.info(
       [
         firstToday ? `이번 XP: ${signed(xp)}` : "오늘 이미 시도한 문제라 XP 없음",
         `누적 XP: ${signed(total())}`,
+        ...(tags ? [`태그: ${tags}`] : []),
         `정답: ${q.answer.map((label) => `${label}. ${q.choices[label]}`).join(" / ")}`,
         ...(q.explanation ? [`해설: ${q.explanation}`] : []),
       ].join("\n"),
