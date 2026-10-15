@@ -2,7 +2,7 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
-## [Unreleased]
+## [0.3.1] - 2026-10-15
 ### 변경
 - 서비스·도메인 태그를 문제 머리 대신 답을 제출한 뒤 결과에 보여줍니다(풀기 전에 보이면 힌트가 되므로).
 
@@ -31,6 +31,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.3.1]: https://github.com/0-Chan/saa-quiz/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/0-Chan/saa-quiz/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/0-Chan/saa-quiz/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/0-Chan/saa-quiz/compare/v0.1.0...v0.1.1
