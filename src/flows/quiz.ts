@@ -35,27 +35,33 @@ export function pickNext(questions: Question[], seen: ReadonlySet<string>, rando
 
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0");
 
-async function askAnswer(q: Question): Promise<string[]> {
+/** `initial` preselects the previous pick after going back from the confidence prompt. */
+async function askAnswer(q: Question, initial?: string[]): Promise<string[]> {
   const options = Object.entries(q.choices).map(([label, text]) => ({ value: label, label: `${label}. ${text}` }));
   const n = q.answer.length;
-  if (n === 1) return [unwrap(await select({ message: "답을 고르세요", options }))];
+  if (n === 1) return [unwrap(await select({ message: "답을 고르세요", options, initialValue: initial?.[0] }))];
   for (;;) {
-    const picked = unwrap(await multiselect({ message: `${n}개를 고르세요 (Space로 선택, Enter로 제출)`, options, required: true }));
+    const picked = unwrap(
+      await multiselect({ message: `${n}개를 고르세요 (Space로 선택, Enter로 제출)`, options, required: true, initialValues: initial }),
+    );
     if (picked.length === n) return picked.sort();
     log.warn(`정확히 ${n}개를 골라야 합니다 (${picked.length}개 선택함).`);
   }
 }
 
-async function askConfidence(): Promise<Confidence> {
+async function askConfidence(): Promise<Confidence | "back"> {
   const levels: Confidence[] = [3, 2, 1];
   return unwrap(
-    await select({
+    await select<Confidence | "back">({
       message: "확신도는?",
-      options: levels.map((c) => ({
-        value: c,
-        label: CBM[c].label,
-        hint: `맞으면 ${signed(CBM[c].correct)} / 틀리면 ${signed(CBM[c].wrong)}`,
-      })),
+      options: [
+        ...levels.map((c) => ({
+          value: c,
+          label: CBM[c].label,
+          hint: `맞으면 ${signed(CBM[c].correct)} / 틀리면 ${signed(CBM[c].wrong)}`,
+        })),
+        { value: "back" as const, label: "선택지로 돌아가기" },
+      ],
     }),
   );
 }
@@ -158,10 +164,16 @@ export async function runQuiz(): Promise<void> {
     seen.add(q.id);
     log.message(`[${q.id}]\n${q.stem}`);
 
+    // Going back from the confidence prompt saves nothing; time runs to the final pick.
     const shownAt = Date.now();
-    const selected = await askAnswer(q);
-    const ms = Date.now() - shownAt;
-    const confidence = await askConfidence();
+    let selected: string[] = [];
+    let ms = 0;
+    let confidence: Confidence | "back";
+    do {
+      selected = await askAnswer(q, selected.length ? selected : undefined);
+      ms = Date.now() - shownAt;
+      confidence = await askConfidence();
+    } while (confidence === "back");
 
     const at = toLocalIso(new Date());
     const correct = isCorrect(selected, q.answer);
