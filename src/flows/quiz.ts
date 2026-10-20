@@ -5,7 +5,7 @@ import { fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type Bun
 import { writeWrongNotes } from "../store/notes.js";
 import { loadResets, saveResets, type ResetState } from "../store/resets.js";
 import { inReview, KIND_LABEL, pickReview, reviewSummary, tagLine } from "../review.js";
-import { countedMs, EXAM_PACE_MS, formatDuration } from "../study.js";
+import { countedMs, EXAM_PACE_MS, formatDuration, isIdle } from "../study.js";
 import { playConfetti } from "../ui/confetti.js";
 import { unwrap } from "../util/prompt.js";
 import { toLocalIso } from "../util/time.js";
@@ -157,7 +157,7 @@ export async function runQuiz(): Promise<void> {
   const reviewFirst = await askReviewFirst(questions);
 
   const seen = new Set<string>();
-  const session = { solved: 0, correct: 0, xp: 0, ms: 0 };
+  const session = { solved: 0, correct: 0, xp: 0, ms: 0, timed: 0 };
   const nextQuestion = () => (reviewFirst ? pickReview(questions, seen) : null) ?? pickNext(questions, seen);
 
   for (let q = nextQuestion(); q; q = nextQuestion()) {
@@ -189,10 +189,11 @@ export async function runQuiz(): Promise<void> {
     session.correct += correct ? 1 : 0;
     session.xp += xp;
     session.ms += countedMs(ms);
+    session.timed += isIdle(ms) ? 0 : 1;
 
     const labels = (xs: string[]) => [...xs].sort().join(", ");
-    const pace = ms > EXAM_PACE_MS ? ` (시험 기준 ${formatDuration(EXAM_PACE_MS)} 초과)` : "";
-    const picked = `${formatDuration(ms)}만에 선택: ${labels(selected)}`;
+    const pace = isIdle(ms) ? " · 10분이 넘어 풀이 시간에서 뺐습니다" : ms > EXAM_PACE_MS ? ` (시험 기준 ${formatDuration(EXAM_PACE_MS)} 초과)` : "";
+    const picked = isIdle(ms) ? `선택: ${labels(selected)}` : `${formatDuration(ms)}만에 선택: ${labels(selected)}`;
     if (correct) log.success(`정답입니다! ${picked}${pace}`);
     else log.error(`오답입니다. ${picked} / 정답: ${labels(q.answer)}${pace}`);
     if (wasInReview && !inReview(updated)) log.success("🎓 오답노트에서 졸업했습니다.");
@@ -242,8 +243,8 @@ export async function runQuiz(): Promise<void> {
   outro(
     `세션 요약 — 푼 문제 ${session.solved}개, 정답 ${session.correct}개, ` +
       `세션 XP ${signed(session.xp)}, 누적 XP ${signed(total())}` +
-      (session.solved
-        ? `, 풀이 시간 ${formatDuration(session.ms)} (평균 ${formatDuration(session.ms / session.solved)})`
+      (session.timed
+        ? `, 풀이 시간 ${formatDuration(session.ms)} (평균 ${formatDuration(session.ms / session.timed)})`
         : ""),
   );
 }

@@ -2,8 +2,8 @@ import { localDay } from "./util/time.js";
 
 /** SAA-C03 pace: 65 questions in 130 minutes. */
 export const EXAM_PACE_MS = 120_000;
-/** One attempt counts for at most 10 minutes, so leaving the prompt open does not inflate totals. */
-export const MAX_COUNTED_MS = 600_000;
+/** Over 10 minutes means the prompt was left open; such attempts are left out of solving time. */
+export const IDLE_MS = 600_000;
 
 export interface TimedAttempt {
   at: string;
@@ -14,8 +14,11 @@ export interface TimedQuestion {
   attempts: TimedAttempt[];
 }
 
+export const isIdle = (ms: number) => ms > IDLE_MS;
+
+/** Solving time an attempt contributes: 0 when idle. The raw ms stays in the record. */
 export function countedMs(ms: number): number {
-  return Math.min(ms, MAX_COUNTED_MS);
+  return isIdle(ms) ? 0 : ms;
 }
 
 /** Solving time of every attempt (not just the first) on a local day. */
