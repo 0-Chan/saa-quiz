@@ -3,6 +3,13 @@
 AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 풀고, 답과 함께 확신도를 고르면 XP를 받는다.
 - 문제의 출처는 SAA-C03 기본 문제 번들 하나다. **이 저장소(public)에는 문제 데이터가 없다.** `saa quiz`를 실행했을 때 문제 폴더가 비어 있으면 접근 코드를 묻고(최대 3번), 코드 확인 서버(`infra/seed-gate`, Lambda Function URL, 주소는 `src/meta.ts`의 `SEED_GATE_URL`)가 비공개 S3 버킷의 번들(`{questions, answers}`)을 돌려준다. `SAA_SEED_FILE`(로컬 경로)이 설정돼 있으면 코드 대신 그 파일을 쓴다(오프라인·테스트용). 번들은 별도 풀이·검증 하네스(이 저장소 밖)에서 만든다. 불러올 때 확신도 low인 10문제는 빼고, 해설에는 `rationale_ko`만 넣는다. id와 파일 형식은 아래 "문제 파일 형식"을 따른다.
 - **문제 데이터, 버킷 이름, 접근 코드와 그 해시는 저장소·패키지·공개된 곳에 절대 넣지 않는다.** 코드는 사용자가 `scripts/set-code.sh`로 정하고 교체하며, 해시만 Lambda 환경변수 `CODE_SHA256`에 저장한다. 짐작하기 쉬운 코드(시험 코드, 이름 등)는 쓰지 않는다. 서버 주소는 그것만으로는 아무것도 받을 수 없으므로 코드에 둔다.
+- 관리자 명령(README에서 옮김). 코드가 틀리면 Lambda는 1초 뒤 403을 돌려준다.
+  ```bash
+  SAA_SEED_BUCKET=<버킷> scripts/deploy-gate.sh   # 함수·권한·Function URL 생성/갱신, URL 출력 → src/meta.ts의 SEED_GATE_URL
+  scripts/set-code.sh                             # 새 무작위 코드 발급(교체). 이전 코드는 즉시 무효, 코드는 화면에 한 번만 출력
+  scripts/set-code.sh my-own-code-phrase          # 직접 정하기
+  ```
+- 번들 형식: `{"questions": [{"id", "stem", "options": {"A": …}}], "answers": [{"id", "answer": ["B"], "confidence": "high|medium|low", "rationale_ko", "services": ["S3"], "domain": "secure|resilient|performance|cost"}]}`. `services`와 `domain`은 없어도 된다.
 - LLM은 쓰지 않는다. CLI는 지문, 선택지, 정답, 해설을 생성하지 않는다.
 - 모든 기록은 로컬 md 파일로 남긴다.
 - 작업명(npm 패키지명)은 `saa-quiz`, 실행 명령은 `saa`다. 코드 안에서는 이름과 버전을 `src/meta.ts`의 상수(`APP_NAME`, `COMMAND`, `VERSION`)로만 쓰고 하드코딩하지 않는다. 예외로 `package.json`(name, version, bin)과 문서(README, CHANGELOG)에는 직접 적는다.
