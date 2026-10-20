@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   graduated,
   inReview,
+  overallStat,
+  passes,
   pickReview,
   renderWrongNotes,
   reviewKind,
@@ -93,6 +95,18 @@ describe("tag stats", () => {
     const { services } = tagStats(qs);
     expect(weakServices(services).map((s) => s.name)).toEqual(["RDS"]);
     expect(weakServices(services, 1).map((s) => s.name)).toEqual(["Aurora", "RDS"]);
+  });
+
+  it("overallStat counts every attempted question by last attempt, tagged or not", () => {
+    expect(overallStat(qs)).toEqual({ name: "전체", attempted: 4, correct: 2, inReview: 2 });
+    expect(overallStat([])).toEqual({ name: "전체", attempted: 0, correct: 0, inReview: 0 });
+  });
+
+  it("passes at 72% and never with nothing attempted", () => {
+    const s = (attempted: number, correct: number) => ({ name: "x", attempted, correct, inReview: 0 });
+    expect(passes(s(100, 72))).toBe(true);
+    expect(passes(s(100, 71))).toBe(false);
+    expect(passes(s(0, 0))).toBe(false);
   });
 
   it("tagLine joins services and the domain label", () => {

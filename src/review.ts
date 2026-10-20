@@ -75,17 +75,31 @@ export interface TagStat {
   inReview: number;
 }
 
+const emptyStat = (name: string): TagStat => ({ name, attempted: 0, correct: 0, inReview: 0 });
+
+/** Count one attempted question into `stat`, judged by its last attempt. */
+function tally(stat: TagStat, q: ReviewQuestion): TagStat {
+  stat.attempted += 1;
+  if (q.attempts[q.attempts.length - 1]!.correct) stat.correct += 1;
+  if (inReview(q)) stat.inReview += 1;
+  return stat;
+}
+
+/** All attempted questions, tagged or not, by last attempt. */
+export function overallStat(questions: ReviewQuestion[]): TagStat {
+  return questions.filter((q) => q.attempts.length).reduce(tally, emptyStat("전체"));
+}
+
+/** SAA-C03 passes at 720/1000; read as a 72% accuracy line. */
+export const PASS_RATE = 72;
+/** Judged on the shown (rounded) rate so the verdict never contradicts the number. */
+export const passes = (s: TagStat) => s.attempted > 0 && rate(s) >= PASS_RATE;
+
 /** Per service and per domain: attempted questions, how many were right on the last attempt, how many are in the note. */
 export function tagStats(questions: ReviewQuestion[]): { services: TagStat[]; domains: TagStat[] } {
   const services = new Map<string, TagStat>();
   const domains = new Map<string, TagStat>();
-  const add = (map: Map<string, TagStat>, name: string, q: ReviewQuestion) => {
-    const stat = map.get(name) ?? { name, attempted: 0, correct: 0, inReview: 0 };
-    stat.attempted += 1;
-    if (q.attempts[q.attempts.length - 1]!.correct) stat.correct += 1;
-    if (inReview(q)) stat.inReview += 1;
-    map.set(name, stat);
-  };
+  const add = (map: Map<string, TagStat>, name: string, q: ReviewQuestion) => map.set(name, tally(map.get(name) ?? emptyStat(name), q));
   for (const q of questions) {
     if (!q.attempts.length) continue;
     for (const s of q.services ?? []) add(services, s, q);
