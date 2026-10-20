@@ -2,8 +2,9 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
-## [Unreleased]
+## [0.3.3] - 2026-10-20
 ### 변경
+- README를 핵심만 남기고 다시 썼습니다(표지 이미지 추가).
 - 10분을 넘긴 시도는 10분으로 세지 않고 풀이 시간에서 아예 뺍니다(자리 비움으로 봄, 기존 기록에도 적용). 결과 줄에도 그렇게 표시합니다.
 
 ## [0.3.2] - 2026-10-20
@@ -44,6 +45,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.3.3]: https://github.com/0-Chan/saa-quiz/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/0-Chan/saa-quiz/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/0-Chan/saa-quiz/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/0-Chan/saa-quiz/compare/v0.2.0...v0.3.0
