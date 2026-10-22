@@ -9,7 +9,7 @@ import { countedMs, EXAM_PACE_MS, formatDuration, isIdle } from "../study.js";
 import { playConfetti } from "../ui/confetti.js";
 import { unwrap } from "../util/prompt.js";
 import { toLocalIso } from "../util/time.js";
-import { CBM, crossedMilestone, crossedNegativeMilestones, cumulativeXp, earnsXp, isCorrect, points, type Confidence } from "../xp.js";
+import { CBM, isMulti, crossedMilestone, crossedNegativeMilestones, cumulativeXp, earnsXp, isCorrect, points, type Confidence } from "../xp.js";
 
 const lastAttempt = (q: Question) => q.attempts[q.attempts.length - 1];
 
@@ -49,7 +49,7 @@ async function askAnswer(q: Question, initial?: string[]): Promise<string[]> {
   }
 }
 
-async function askConfidence(): Promise<Confidence | "back"> {
+async function askConfidence(multi: boolean): Promise<Confidence | "back"> {
   const levels: Confidence[] = [3, 2, 1];
   return unwrap(
     await select<Confidence | "back">({
@@ -58,7 +58,7 @@ async function askConfidence(): Promise<Confidence | "back"> {
         ...levels.map((c) => ({
           value: c,
           label: CBM[c].label,
-          hint: `맞으면 ${signed(CBM[c].correct)} / 틀리면 ${signed(CBM[c].wrong)}`,
+          hint: `맞으면 ${signed(multi ? CBM[c].multiCorrect : CBM[c].correct)} / 틀리면 ${signed(CBM[c].wrong)}`,
         })),
         { value: "back" as const, label: "선택지로 돌아가기" },
       ],
@@ -172,13 +172,13 @@ export async function runQuiz(): Promise<void> {
     do {
       selected = await askAnswer(q, selected.length ? selected : undefined);
       ms = Date.now() - shownAt;
-      confidence = await askConfidence();
+      confidence = await askConfidence(isMulti(q));
     } while (confidence === "back");
 
     const at = toLocalIso(new Date());
     const correct = isCorrect(selected, q.answer);
     const firstToday = earnsXp(q, at);
-    const xp = firstToday ? points(confidence, correct) : 0;
+    const xp = firstToday ? points(confidence, correct, isMulti(q)) : 0;
 
     const before = total();
     const wasInReview = inReview(q);

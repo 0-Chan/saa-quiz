@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attemptXps, crossedMilestone, crossedNegativeMilestones, cumulativeXp, earnsXp, isCorrect, milestone, points, totalXp, xpOnDay, type XpAttempt } from "./xp.js";
+import { attemptXps, crossedMilestone, crossedNegativeMilestones, cumulativeXp, earnsXp, isCorrect, isMulti, milestone, points, totalXp, xpOnDay, type XpAttempt } from "./xp.js";
 
 const at = (iso: string, correct: boolean, confidence: number): XpAttempt => ({ at: iso, correct, confidence });
 
@@ -13,6 +13,30 @@ describe("CBM points", () => {
     [1, false, 0],
   ])("confidence %i, correct=%s → %i", (confidence, correct, expected) => {
     expect(points(confidence, correct)).toBe(expected);
+  });
+
+  it.each([
+    [3, true, 5],
+    [3, false, -2],
+    [2, true, 3],
+    [2, false, -1],
+    [1, true, 1],
+    [1, false, 0],
+  ])("multi-answer: confidence %i, correct=%s → %i", (confidence, correct, expected) => {
+    expect(points(confidence, correct, true)).toBe(expected);
+  });
+
+  it("two or three answers are multi, one or missing is not", () => {
+    expect(isMulti({ answer: ["A", "C"] })).toBe(true);
+    expect(isMulti({ answer: ["A", "C", "E"] })).toBe(true);
+    expect(isMulti({ answer: ["A"] })).toBe(false);
+    expect(isMulti({})).toBe(false);
+  });
+
+  it("attemptXps scores multi-answer questions from the answer count, old attempts included", () => {
+    const q = { answer: ["B", "D"], attempts: [at("2026-10-01T09:00:00+09:00", true, 3), at("2026-10-02T09:00:00+09:00", false, 3), at("2026-10-03T09:00:00+09:00", true, 2)] };
+    expect(attemptXps(q)).toEqual([5, -2, 3]);
+    expect(totalXp([q, { answer: ["A"], attempts: [at("2026-10-01T09:00:00+09:00", true, 3)] }])).toBe(6 + 3);
   });
 
   it("rejects confidence outside 1-3", () => {

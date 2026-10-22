@@ -2,11 +2,11 @@ import { localDay } from "./util/time.js";
 
 export type Confidence = 1 | 2 | 3;
 
-/** Certainty-based marking table. */
-export const CBM: Record<Confidence, { label: string; correct: number; wrong: number }> = {
-  3: { label: "확실", correct: 3, wrong: -2 },
-  2: { label: "애매", correct: 2, wrong: -1 },
-  1: { label: "자신 없음", correct: 1, wrong: 0 },
+/** Certainty-based marking table. Multi-answer questions pay more when right (all labels must match). */
+export const CBM: Record<Confidence, { label: string; correct: number; multiCorrect: number; wrong: number }> = {
+  3: { label: "확실", correct: 3, multiCorrect: 5, wrong: -2 },
+  2: { label: "애매", correct: 2, multiCorrect: 3, wrong: -1 },
+  1: { label: "자신 없음", correct: 1, multiCorrect: 1, wrong: 0 },
 };
 
 export interface XpAttempt {
@@ -17,6 +17,8 @@ export interface XpAttempt {
 
 export interface XpQuestion {
   attempts: XpAttempt[];
+  /** More than one label → multi-answer scoring. */
+  answer?: string[];
 }
 
 /** Correct only when the selected labels are exactly the answer set. */
@@ -26,11 +28,14 @@ export function isCorrect(selected: string[], answer: string[]): boolean {
   return a.size === b.size && [...a].every((label) => b.has(label));
 }
 
-export function points(confidence: number, correct: boolean): number {
+export function points(confidence: number, correct: boolean, multi = false): number {
   const row = CBM[confidence as Confidence];
   if (!row) throw new RangeError(`confidence must be 1-3, got ${confidence}`);
-  return correct ? row.correct : row.wrong;
+  if (!correct) return row.wrong;
+  return multi ? row.multiCorrect : row.correct;
 }
+
+export const isMulti = (q: Pick<XpQuestion, "answer">) => (q.answer?.length ?? 1) > 1;
 
 /** XP earned by each attempt, in order: only the first attempt per local day counts. */
 export function attemptXps(question: XpQuestion): number[] {
@@ -39,7 +44,7 @@ export function attemptXps(question: XpQuestion): number[] {
     const day = localDay(attempt.at);
     if (seenDays.has(day)) return 0;
     seenDays.add(day);
-    return points(attempt.confidence, attempt.correct);
+    return points(attempt.confidence, attempt.correct, isMulti(question));
   });
 }
 
