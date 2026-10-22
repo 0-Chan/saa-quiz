@@ -2,7 +2,7 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
-## [Unreleased]
+## [0.4.0] - 2026-10-22
 ### 추가
 - 새 버전 알림: 하루에 한 번 새 버전을 확인하고, 있으면 명령이 끝날 때 알려 줍니다. `NO_UPDATE_NOTIFIER=1` 또는 `--no-update-notifier`로 끌 수 있습니다.
 
@@ -49,6 +49,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.4.0]: https://github.com/0-Chan/saa-quiz/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/0-Chan/saa-quiz/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/0-Chan/saa-quiz/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/0-Chan/saa-quiz/compare/v0.3.0...v0.3.1
