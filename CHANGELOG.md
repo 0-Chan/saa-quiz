@@ -2,6 +2,10 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [Unreleased]
+### 추가
+- 새 버전 알림: 하루에 한 번 새 버전을 확인하고, 있으면 명령이 끝날 때 알려 줍니다. `NO_UPDATE_NOTIFIER=1` 또는 `--no-update-notifier`로 끌 수 있습니다.
+
 ## [0.3.3] - 2026-10-20
 ### 변경
 - README를 핵심만 남기고 다시 썼습니다(표지 이미지 추가).

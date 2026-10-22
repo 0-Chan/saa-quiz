@@ -17,6 +17,8 @@ AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 �
 ## 범위
 명령은 두 개뿐이다: `saa quiz`(문제 풀이), `saa xp`(XP 현황). 문제 등록 명령은 없다. 기본 문제 불러오기는 명령이 아니라 `saa quiz`를 실행했을 때 문제 폴더가 비어 있으면 한 번 자동으로 일어난다. 문제가 하나라도 있으면 아무것도 하지 않는다.
 
+**새 버전 알림.** `quiz`·`xp`를 실행하면 `update-notifier`가 하루에 한 번 백그라운드 자식 프로세스로 npm 레지스트리의 최신 버전을 확인하고(설치 후 첫 하루는 확인하지 않음), 새 버전이 있으면 **다음 실행**이 끝날 때 노란 박스로 `새 버전 X가 있습니다 (현재 Y). 업데이트: npm i -g saa-quiz@latest`를 보여준다. 기록은 `~/.config/configstore/update-notifier-saa-quiz.json`. `NO_UPDATE_NOTIFIER` 환경 변수, `--no-update-notifier` 플래그, CI, TTY가 아닌 출력에서는 꺼진다. `--version`·`--help`에서는 확인하지 않는다. 네트워크는 접근 코드 서버와 이 버전 확인(GET, 보내는 데이터 없음)만 쓴다.
+
 **만들지 않는 것.** 확장을 대비한 추상화나 빈 껍데기 코드도 만들지 않는다.
 - LLM 연동(문제 파싱, 풀이, 해설·노트 생성), API 키 설정
 - XP 외의 게임 요소(레벨, 연속 학습일, 업적, 숙련도, 퀘스트)
@@ -24,7 +26,7 @@ AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 �
 
 ## 스택
 - Node.js 20.12 이상(`node:util`의 `styleText`), TypeScript, ESM(`"type": "module"`), npm
-- commander(명령 파싱), @clack/prompts(질문·선택), gray-matter(frontmatter), zod(파일 내용 검증)
+- commander(명령 파싱), @clack/prompts(질문·선택), gray-matter(frontmatter), zod(파일 내용 검증), update-notifier(새 버전 알림, 타입은 `@types/update-notifier`)
 - 개발 실행은 tsx, 빌드는 tsc, 테스트는 vitest
 - **라이브러리 API는 버전마다 다르다. 코드를 쓰기 전에 `node_modules`에 설치된 버전의 타입 정의를 확인하고 그에 맞춘다.** 기억에 의존해 API를 쓰지 않는다.
 
