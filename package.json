@@ -1,6 +1,6 @@
 {
   "name": "saa-quiz",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "AWS SAA 시험 대비용 로컬 문제 풀이 CLI (확신도 기반 XP)",
   "keywords": [
     "aws",
