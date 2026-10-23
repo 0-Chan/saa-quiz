@@ -5,6 +5,8 @@
 AWS Solutions Architect Associate(SAA-C03) 문제를 터미널에서 푸는 CLI입니다.
 답과 함께 얼마나 확신하는지 고르고, 그에 따라 점수(XP)가 달라집니다.
 
+<p align="center"><img src="docs/assets/demo.gif" alt="saa-quiz 데모: 문제 풀이, 확신도 선택, saa xp" width="800"></p>
+
 ## 설치
 
 ```bash
