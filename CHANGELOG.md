@@ -2,6 +2,10 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [0.4.2] - 2026-10-23
+### 변경
+- README에 데모 GIF를 추가했습니다.
+
 ## [0.4.1] - 2026-10-22
 ### 변경
 - 복수 정답 문제를 맞히면 확실 +5, 애매 +3을 받습니다(자신 없음 +1, 감점은 그대로). 예전 기록에도 적용되어 누적 XP가 오를 수 있습니다.
@@ -53,6 +57,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.4.2]: https://github.com/0-Chan/saa-quiz/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/0-Chan/saa-quiz/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/0-Chan/saa-quiz/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/0-Chan/saa-quiz/compare/v0.3.2...v0.3.3
