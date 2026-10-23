@@ -128,6 +128,8 @@ src/
   util/time.ts         # 로컬 타임존 ISO 시각, 로컬 날짜
 infra/seed-gate/
   index.mjs            # 접근 코드 확인 Lambda (scripts/deploy-gate.sh로 배포, scripts/set-code.sh로 코드 교체)
+.claude/skills/release/
+  SKILL.md             # /release X.Y.Z 릴리스 절차 (Claude Code skill)
 ```
 `package.json`의 bin은 `{ "saa": "dist/cli.js" }`다.
 
@@ -147,6 +149,7 @@ SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz   # 실제 데이터와 격리해�
 ```
 
 ## 릴리스
+Claude Code에서는 `/release X.Y.Z`로 실행한다. 단계별 명령과 사전 확인은 `.claude/skills/release/SKILL.md`가 원본이고, 아래는 요약이다.
 1. `package.json`(`npm version X.Y.Z --no-git-tag-version`)과 `src/meta.ts`의 `VERSION`을 함께 올린다.
 2. `CHANGELOG.md` 맨 위에 항목을 추가하고 아래 비교 링크를 갱신한다. CHANGELOG는 `package.json`의 `files`에 들어 있어 npm 패키지에도 포함된다.
 3. `Release X.Y.Z`로 커밋하고 annotated 태그 `vX.Y.Z`를 단 뒤 `git push origin main --follow-tags`.
