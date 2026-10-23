@@ -1,13 +1,25 @@
 {
   "name": "saa-quiz",
-  "version": "0.4.2",
-  "description": "AWS SAA 시험 대비용 로컬 문제 풀이 CLI (확신도 기반 XP)",
+  "version": "0.4.3",
+  "description": "AWS Certified Solutions Architect Associate (SAA-C03) exam practice quiz CLI with confidence-based scoring · AWS SAA 시험 대비 문제 풀이 CLI",
   "keywords": [
+    "saa-quiz",
     "aws",
     "saa-c03",
+    "saa",
+    "aws-saa",
+    "solutions-architect",
+    "solutions-architect-associate",
+    "aws-certification",
+    "aws-certified",
+    "certification",
+    "exam",
+    "exam-prep",
+    "practice-test",
     "quiz",
+    "study",
     "cli",
-    "certification"
+    "terminal"
   ],
   "license": "MIT",
   "author": "0Chan-smc",

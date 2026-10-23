@@ -2,6 +2,10 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [0.4.3] - 2026-10-23
+### 변경
+- npm 검색에 잘 잡히도록 패키지 설명(영어·한국어)과 키워드를 보강했습니다.
+
 ## [0.4.2] - 2026-10-23
 ### 변경
 - README에 데모 GIF를 추가했습니다.
@@ -57,6 +61,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.4.3]: https://github.com/0-Chan/saa-quiz/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/0-Chan/saa-quiz/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/0-Chan/saa-quiz/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/0-Chan/saa-quiz/compare/v0.3.3...v0.4.0
