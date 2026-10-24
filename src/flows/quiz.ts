@@ -1,4 +1,4 @@
-import { confirm, intro, log, multiselect, outro, select, spinner, text } from "@clack/prompts";
+import { intro, log, outro, spinner } from "@clack/prompts";
 import { COMMAND } from "../meta.js";
 import { appendAttempt, loadAll, type Question } from "../store/questions.js";
 import { fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type BundleResult } from "../seed.js";
@@ -7,7 +7,7 @@ import { loadResets, saveResets, type ResetState } from "../store/resets.js";
 import { inReview, KIND_LABEL, pickReview, reviewSummary, tagLine } from "../review.js";
 import { countedMs, EXAM_PACE_MS, formatDuration, isIdle } from "../study.js";
 import { playConfetti } from "../ui/confetti.js";
-import { unwrap } from "../util/prompt.js";
+import { prompt } from "../util/prompt.js";
 import { toLocalIso } from "../util/time.js";
 import { CBM, isMulti, crossedMilestone, crossedNegativeMilestones, cumulativeXp, earnsXp, isCorrect, points, type Confidence } from "../xp.js";
 
@@ -37,33 +37,26 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0");
 
 /** `initial` preselects the previous pick after going back from the confidence prompt. */
 async function askAnswer(q: Question, initial?: string[]): Promise<string[]> {
-  const options = Object.entries(q.choices).map(([label, text]) => ({ value: label, label: `${label}. ${text}` }));
+  // `key` lets line mode take the letter itself ("B", "A,C").
+  const options = Object.entries(q.choices).map(([label, text]) => ({ value: label, label: `${label}. ${text}`, key: label }));
   const n = q.answer.length;
-  if (n === 1) return [unwrap(await select({ message: "답을 고르세요", options, initialValue: initial?.[0] }))];
-  for (;;) {
-    const picked = unwrap(
-      await multiselect({ message: `${n}개를 고르세요 (Space로 선택, Enter로 제출)`, options, required: true, initialValues: initial }),
-    );
-    if (picked.length === n) return picked.sort();
-    log.warn(`정확히 ${n}개를 골라야 합니다 (${picked.length}개 선택함).`);
-  }
+  if (n === 1) return [await prompt.select({ message: "답을 고르세요", options, initialValue: initial?.[0] })];
+  return (await prompt.multiselect({ message: `${n}개를 고르세요`, options, count: n, initialValues: initial })).sort();
 }
 
 async function askConfidence(multi: boolean): Promise<Confidence | "back"> {
   const levels: Confidence[] = [3, 2, 1];
-  return unwrap(
-    await select<Confidence | "back">({
-      message: "확신도는?",
-      options: [
-        ...levels.map((c) => ({
-          value: c,
-          label: CBM[c].label,
-          hint: `맞으면 ${signed(multi ? CBM[c].multiCorrect : CBM[c].correct)} / 틀리면 ${signed(CBM[c].wrong)}`,
-        })),
-        { value: "back" as const, label: "선택지로 돌아가기" },
-      ],
-    }),
-  );
+  return prompt.select<Confidence | "back">({
+    message: "확신도는?",
+    options: [
+      ...levels.map((c) => ({
+        value: c,
+        label: CBM[c].label,
+        hint: `맞으면 ${signed(multi ? CBM[c].multiCorrect : CBM[c].correct)} / 틀리면 ${signed(CBM[c].wrong)}`,
+      })),
+      { value: "back" as const, label: "선택지로 돌아가기" },
+    ],
+  });
 }
 
 /** First time total XP falls through a negative milestone, offer to reset it to 0. Saves only after an answer. */
@@ -71,14 +64,12 @@ async function offerReset(resets: ResetState, before: number, after: number, at:
   const crossed = crossedNegativeMilestones(before, after);
   const fresh = crossed.filter((m) => !resets.asked.includes(m));
   if (!fresh.length) return;
-  const reset = unwrap(
-    await confirm({
-      message: `누적 XP가 ${signed(Math.min(...fresh))}에 도달했습니다. 0점으로 리셋할까요?`,
-      active: "리셋",
-      inactive: "유지",
-      initialValue: false,
-    }),
-  );
+  const reset = await prompt.confirm({
+    message: `누적 XP가 ${signed(Math.min(...fresh))}에 도달했습니다. 0점으로 리셋할까요?`,
+    active: "리셋",
+    inactive: "유지",
+    initialValue: false,
+  });
   resets.asked = [...new Set([...resets.asked, ...crossed])].sort((a, b) => b - a);
   if (reset) resets.resets = [...resets.resets, { at, adjust: -after }];
   await saveResets(resets);
@@ -94,13 +85,11 @@ async function seedDefaultQuestions(): Promise<void> {
   if (!result) {
     log.info("처음 실행입니다. 기본 문제를 받으려면 접근 코드를 입력하세요.");
     for (let i = 1; i <= CODE_TRIES; i++) {
-      const code = unwrap(
-        await text({
-          message: "접근 코드",
-          placeholder: "xxx-xxx",
-          validate: (v) => (v?.trim() ? undefined : "코드를 입력하세요"),
-        }),
-      );
+      const code = await prompt.text({
+        message: "접근 코드",
+        placeholder: "xxx-xxx",
+        validate: (v) => (v.trim() ? undefined : "코드를 입력하세요"),
+      });
       const s = spinner();
       s.start("기본 문제를 받는 중");
       result = await fetchBundleWithCode(code);
@@ -121,15 +110,13 @@ async function seedDefaultQuestions(): Promise<void> {
 async function askReviewFirst(questions: Question[]): Promise<boolean> {
   const s = reviewSummary(questions);
   if (!s.total) return false;
-  return unwrap(
-    await select({
-      message: `오답노트에 ${s.total}문제가 있습니다 (${KIND_LABEL.confident} ${s.confident} / ${KIND_LABEL.unsure} ${s.unsure}). 먼저 풀까요?`,
-      options: [
-        { value: true, label: "오답노트 먼저" },
-        { value: false, label: "평소 순서대로" },
-      ],
-    }),
-  );
+  return prompt.select({
+    message: `오답노트에 ${s.total}문제가 있습니다 (${KIND_LABEL.confident} ${s.confident} / ${KIND_LABEL.unsure} ${s.unsure}). 먼저 풀까요?`,
+    options: [
+      { value: true, label: "오답노트 먼저" },
+      { value: false, label: "평소 순서대로" },
+    ],
+  });
 }
 
 /** The attempt is already saved; a failed note write only warns. */
@@ -222,16 +209,14 @@ export async function runQuiz(): Promise<void> {
     if (!hasNext && !canShowMine) break;
     let next: "next" | "mine" | "quit";
     do {
-      next = unwrap(
-        await select<"next" | "mine" | "quit">({
-          message: hasNext ? "계속할까요?" : "마지막 문제입니다.",
-          options: [
-            ...(hasNext ? [{ value: "next" as const, label: "다음 문제" }] : []),
-            ...(canShowMine ? [{ value: "mine" as const, label: "내가 고른 선택지 보기" }] : []),
-            { value: "quit" as const, label: "종료" },
-          ],
-        }),
-      );
+      next = await prompt.select<"next" | "mine" | "quit">({
+        message: hasNext ? "계속할까요?" : "마지막 문제입니다.",
+        options: [
+          ...(hasNext ? [{ value: "next" as const, label: "다음 문제" }] : []),
+          ...(canShowMine ? [{ value: "mine" as const, label: "내가 고른 선택지 보기" }] : []),
+          { value: "quit" as const, label: "종료" },
+        ],
+      });
       if (next === "mine") {
         log.message(`내 선택: ${[...selected].sort().map((label) => `${label}. ${q.choices[label]}`).join(" / ")}`);
         canShowMine = false;

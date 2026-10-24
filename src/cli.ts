@@ -4,7 +4,7 @@ import updateNotifier from "update-notifier";
 import { runQuiz } from "./flows/quiz.js";
 import { runXp } from "./flows/xp.js";
 import { APP_NAME, COMMAND, VERSION } from "./meta.js";
-import { isUserExit } from "./util/prompt.js";
+import { closePrompts, isUserExit } from "./util/prompt.js";
 
 const program = new Command(COMMAND)
   .description(`${APP_NAME}: AWS SAA 문제 풀이 CLI`)
@@ -27,4 +27,6 @@ try {
 } catch (error) {
   if (!isUserExit(error)) throw error;
   process.exitCode = 0;
+} finally {
+  closePrompts();
 }
