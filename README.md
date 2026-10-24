@@ -13,7 +13,7 @@ AWS Solutions Architect Associate(SAA-C03) 문제를 터미널에서 푸는 CLI�
 npm install -g saa-quiz
 ```
 
-Node.js 20.12 이상이 필요합니다.
+Node.js 22.12.0 이상이 필요합니다.
 
 ## 사용법
 

@@ -25,7 +25,7 @@ AWS SAA 시험 대비용 로컬 문제 풀이 CLI다. SAA-C03 기본 문제를 �
 - 간격 반복 알고리즘(오답노트 졸업은 아래 한 가지 규칙만 쓴다), Ink UI, 외부 저장소(기본 문제 번들을 한 번 읽어 오는 것만 예외)
 
 ## 스택
-- Node.js 20.12 이상(`node:util`의 `styleText`), TypeScript, ESM(`"type": "module"`), npm
+- Node.js 22.12.0 이상(commander 15의 최소 지원 버전, `node:util`의 `styleText` 사용), TypeScript, ESM(`"type": "module"`), npm
 - commander(명령 파싱), @clack/prompts(질문·선택), gray-matter(frontmatter), zod(파일 내용 검증), update-notifier(새 버전 알림, 타입은 `@types/update-notifier`)
 - 개발 실행은 tsx, 빌드는 tsc, 테스트는 vitest
 - **라이브러리 API는 버전마다 다르다. 코드를 쓰기 전에 `node_modules`에 설치된 버전의 타입 정의를 확인하고 그에 맞춘다.** 기억에 의존해 API를 쓰지 않는다.

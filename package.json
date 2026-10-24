@@ -1,6 +1,6 @@
 {
   "name": "saa-quiz",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "AWS Certified Solutions Architect Associate (SAA-C03) exam practice quiz CLI with confidence-based scoring · AWS SAA 시험 대비 문제 풀이 CLI",
   "keywords": [
     "saa-quiz",
@@ -36,11 +36,12 @@
     "saa": "dist/cli.js"
   },
   "engines": {
-    "node": ">=20.12"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "tsx src/cli.ts",
-    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json && chmod +x dist/cli.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "prepublishOnly": "npm test && npm run build"

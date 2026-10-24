@@ -2,9 +2,13 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
-## [Unreleased]
+## [0.4.4] - 2026-10-25
 ### 추가
 - 방향키를 쓸 수 없는 터미널(iOS a-Shell, 파이프 입력 등)에서는 글자·번호를 입력하고 Enter로 고르는 줄 입력 모드로 자동 전환합니다. `SAA_LINE_INPUT=1`로 직접 켤 수 있습니다.
+
+### 변경
+- 의존성 요구사항에 맞춰 Node.js 최소 지원 버전을 22.12.0으로 명시했습니다.
+- 빌드 전에 기존 출력 폴더를 정리해 삭제된 기능의 파일이 패키지에 남지 않도록 했습니다.
 
 ## [0.4.3] - 2026-10-23
 ### 변경
@@ -65,6 +69,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.4.4]: https://github.com/0-Chan/saa-quiz/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/0-Chan/saa-quiz/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/0-Chan/saa-quiz/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/0-Chan/saa-quiz/compare/v0.4.0...v0.4.1
