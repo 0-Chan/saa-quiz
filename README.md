@@ -56,9 +56,11 @@ saa xp     # 점수, 정답률, 오답노트 현황
 npm install
 npm run dev -- quiz
 npm run typecheck && npm test
+npm run build && npm run check:release
 ```
 
 개발 규칙은 [AGENTS.md](AGENTS.md)에 있습니다.
+0.4.5부터 GitHub 정식 Release를 게시하면 검증을 거쳐 npm에 자동 게시됩니다. 자세한 절차는 [릴리스 가이드](.claude/skills/release/SKILL.md)를 참고하세요.
 
 ## 라이선스
 

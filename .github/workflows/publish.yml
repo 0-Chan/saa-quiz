@@ -1,0 +1,71 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+env:
+  NO_UPDATE_NOTIFIER: '1'
+  RELEASE_TAG: ${{ github.event.release.tag_name }}
+
+jobs:
+  verify:
+    if: ${{ !github.event.release.prerelease && !github.event.release.draft }}
+    name: Verify Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.12.0', '24']
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run check:release
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global npm@11
+      - run: npm ci
+      - run: npm run build
+      - run: npm run check:release
+        env:
+          RELEASE_MANIFEST: ${{ runner.temp }}/release-manifest.json
+      - name: Publish validated tarball and verify registry installation
+        run: node scripts/publish-release.mjs
+        env:
+          RELEASE_MANIFEST: ${{ runner.temp }}/release-manifest.json

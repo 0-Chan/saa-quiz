@@ -132,6 +132,14 @@ infra/seed-gate/
   index.mjs            # 접근 코드 확인 Lambda (scripts/deploy-gate.sh로 배포, scripts/set-code.sh로 코드 교체)
 .claude/skills/release/
   SKILL.md             # /release X.Y.Z 릴리스 절차 (Claude Code skill)
+.github/workflows/
+  ci.yml               # PR·main: Node 22.12.0/24 검사와 실제 패키지 설치 검증
+  publish.yml          # GitHub Release: 검증 후 npm OIDC 게시
+scripts/
+  check-release.mjs    # 버전·태그·패키지 파일·설치된 CLI 검사
+  publish-release.mjs  # 검증한 tarball 게시, 레지스트리·provenance 확인
+  package-smoke.mjs    # 임시 폴더에서 설치한 CLI 검사
+  release-validation.mjs # 릴리스 검증 순수 함수
 ```
 `package.json`의 bin은 `{ "saa": "dist/cli.js" }`다.
 
@@ -140,6 +148,7 @@ infra/seed-gate/
 - 순수 함수는 단위 테스트를 꼼꼼히 작성한다. 다음 케이스는 반드시 포함한다: CBM 배점(단일·복수 정답), 복수 정답 채점, 하루 첫 시도 규칙, 날짜가 바뀌는 경계, 번들 변환(low 제외·형식 오류), 마일스톤 경계(양수·음수), 풀이 시간 10분 초과 제외(10분 정확히는 포함)와 표시 형식 경계, 오답노트 졸업(같은 날 다시 맞힘·다음 날 맞힘·졸업 후 다시 틀림)과 분류, 태그 없는 문제, 합격선 경계(71%·72%), 한글 라벨 폭, 입력 모드 판별, 줄 입력 파싱(단일·복수·y/n)과 EOF 취소.
 - store는 임시 디렉터리에서 저장 → 읽기 → attempt 추가 왕복을 테스트한다.
 - 작업을 끝내기 전에 `npm run typecheck`와 `npm test`를 통과시킨다.
+- 릴리스 변경은 `npm run build && npm run check:release`도 통과시킨다. 설치 검사는 임시 폴더와 일반적인 테스트용 문항만 사용하며 실제 문제 번들이나 접근 코드를 쓰지 않는다.
 
 ## 명령어
 ```bash
@@ -147,6 +156,7 @@ npm run dev -- <command>      # tsx로 바로 실행
 npm run build                 # tsc → dist/
 npm run typecheck
 npm test                      # vitest
+npm run check:release          # 빌드 후: 패키징·임시 설치·CLI 검사
 SAA_DATA_DIR=$(mktemp -d) npm run dev -- quiz   # 실제 데이터와 격리해서 수동 테스트
 ```
 
@@ -155,8 +165,11 @@ Claude Code에서는 `/release X.Y.Z`로 실행한다. 단계별 명령과 사�
 1. `package.json`(`npm version X.Y.Z --no-git-tag-version`)과 `src/meta.ts`의 `VERSION`을 함께 올린다.
 2. `CHANGELOG.md` 맨 위에 항목을 추가하고 아래 비교 링크를 갱신한다. CHANGELOG는 `package.json`의 `files`에 들어 있어 npm 패키지에도 포함된다.
 3. `Release X.Y.Z`로 커밋하고 annotated 태그 `vX.Y.Z`를 단 뒤 `git push origin main --follow-tags`.
-4. `npm publish`(prepublishOnly가 test·build를 돌림). 패스키 승인이 필요하므로 **사용자가 별도 터미널에서** 실행한다. Claude Code의 `!`로 실행하면 TTY가 없어 인증을 기다리지 않고 `EOTP`로 실패한다.
-5. `gh release create vX.Y.Z`에 CHANGELOG의 해당 항목을 노트로 넣는다.
+4. 해당 커밋의 main CI(Node 22.12.0/24)가 성공했는지 확인한다.
+5. `gh release create vX.Y.Z`에 CHANGELOG의 해당 항목을 노트로 넣는다. 정식 Release 게시가 npm 자동 게시의 트리거다.
+6. `Publish to npm`이 버전·태그·파일 목록·설치된 CLI를 검사한 tarball을 OIDC로 게시한다. npm 토큰이나 별도 배포 승인은 쓰지 않는다. 완료 후 npm 버전, tarball integrity, provenance의 저장소·워크플로·커밋, 레지스트리에서 설치한 CLI까지 확인한다.
+
+전환 시 0.4.4는 기존 절차대로 사용자가 별도 터미널에서 `npm publish`로 먼저 게시한다. 0.4.5부터 위 자동 게시 절차를 사용한다. npm의 Trusted Publisher 설정(owner `0-Chan`, repository `saa-quiz`, workflow `publish.yml`, environment 비움, direct publish 허용)은 첫 자동 게시 전에 등록한다. `prepublishOnly`의 test·build는 수동 게시 보호용으로 유지한다. CI의 npm/GitHub 통신은 CLI 실행 중 네트워크 범위와 별개다.
 
 ## 관련 문서
 - `docs/plans/saa-quiz-v0.1.md`: v0.1 구현 단계, 완료 기준, 명세에서 확정한 결정

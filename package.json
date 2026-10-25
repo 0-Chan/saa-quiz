@@ -44,7 +44,8 @@
     "build": "npm run clean && tsc -p tsconfig.build.json && chmod +x dist/cli.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm test && npm run build",
+    "check:release": "node scripts/check-release.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",

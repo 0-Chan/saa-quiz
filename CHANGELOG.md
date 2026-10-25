@@ -2,6 +2,11 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [Unreleased]
+### 변경
+- GitHub 정식 Release를 게시하면 npm Trusted Publishing으로 자동 게시합니다.
+- Node.js 22.12.0과 24에서 버전 동기화, 패키지 파일 목록, 설치된 CLI 동작을 검사합니다.
+
 ## [0.4.4] - 2026-10-25
 ### 추가
 - 방향키를 쓸 수 없는 터미널(iOS a-Shell, 파이프 입력 등)에서는 글자·번호를 입력하고 Enter로 고르는 줄 입력 모드로 자동 전환합니다. `SAA_LINE_INPUT=1`로 직접 켤 수 있습니다.
