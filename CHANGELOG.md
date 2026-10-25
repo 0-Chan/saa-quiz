@@ -2,7 +2,7 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
-## [Unreleased]
+## [0.4.5] - 2026-10-25
 ### 변경
 - GitHub 정식 Release를 게시하면 npm Trusted Publishing으로 자동 게시합니다.
 - Node.js 22.12.0과 24에서 버전 동기화, 패키지 파일 목록, 설치된 CLI 동작을 검사합니다.
@@ -74,6 +74,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[0.4.5]: https://github.com/0-Chan/saa-quiz/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/0-Chan/saa-quiz/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/0-Chan/saa-quiz/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/0-Chan/saa-quiz/compare/v0.4.1...v0.4.2
