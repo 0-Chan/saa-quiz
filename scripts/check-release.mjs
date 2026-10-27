@@ -29,7 +29,9 @@ if (tag !== undefined) {
 }
 
 const temp = mkdtempSync(join(tmpdir(), "release-pack-"));
-const pack = JSON.parse(execFileSync("npm", ["pack", "--json", "--pack-destination", temp], { cwd: root, encoding: "utf8", timeout: 60_000 }))[0];
+// npm 11 prints an array; npm 12 an object keyed by package name.
+const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--pack-destination", temp], { cwd: root, encoding: "utf8", timeout: 60_000 }));
+const pack = Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
 const builtFiles = readdirSync(join(root, "src"), { recursive: true })
   .filter((path) => path.endsWith(".ts") && !path.endsWith(".test.ts"))
   .map((path) => "dist/" + path.replace(/\.ts$/, ".js"));
