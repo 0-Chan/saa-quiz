@@ -4,7 +4,7 @@ import { appendAttempt, loadAll, type Question } from "../store/questions.js";
 import { fetchBundleWithCode, hasQuestions, readBundleFile, saveBundle, type BundleResult } from "../seed.js";
 import { writeWrongNotes } from "../store/notes.js";
 import { loadResets, saveResets, type ResetState } from "../store/resets.js";
-import { inReview, KIND_LABEL, pickReview, reviewSummary, tagLine } from "../review.js";
+import { inReview, KIND_LABEL, pickReview, REVIEW_BREAK, reviewLeft, reviewSummary, tagLine } from "../review.js";
 import { countedMs, EXAM_PACE_MS, formatDuration, isIdle } from "../study.js";
 import { playConfetti } from "../ui/confetti.js";
 import { prompt } from "../util/prompt.js";
@@ -141,13 +141,15 @@ export async function runQuiz(): Promise<void> {
   }
 
   log.info(`누적 XP: ${signed(total())}`);
-  const reviewFirst = await askReviewFirst(questions);
+  // Serving note questions first; turns off once the note runs out or the user moves on to new questions.
+  let reviewMode = await askReviewFirst(questions);
 
   const seen = new Set<string>();
-  const session = { solved: 0, correct: 0, xp: 0, ms: 0, timed: 0 };
-  const nextQuestion = () => (reviewFirst ? pickReview(questions, seen) : null) ?? pickNext(questions, seen);
+  const session = { solved: 0, correct: 0, xp: 0, ms: 0, timed: 0, reviewed: 0 };
+  const nextQuestion = () => (reviewMode ? pickReview(questions, seen) : null) ?? pickNext(questions, seen);
 
   for (let q = nextQuestion(); q; q = nextQuestion()) {
+    const fromNote = reviewMode && inReview(q);
     seen.add(q.id);
     log.message(`[${q.id}]\n${q.stem}`);
 
@@ -203,16 +205,37 @@ export async function runQuiz(): Promise<void> {
     );
     await offerReset(resets, before, after, at);
 
+    session.reviewed += fromNote ? 1 : 0;
+    const noteLeft = reviewLeft(questions, seen);
+    if (fromNote && noteLeft === 0) {
+      await playConfetti();
+      log.success(`🎉 오답노트 ${session.reviewed}문제를 모두 풀었습니다! 이제 새 문제로 넘어갑니다.`);
+      reviewMode = false;
+    }
+    // Every REVIEW_BREAK note questions, offer to switch to new questions.
+    const reviewBreak = fromNote && noteLeft > 0 && session.reviewed % REVIEW_BREAK === 0;
+
     const hasNext = pickNext(questions, seen) !== null;
     // A wrong answer can reveal the chosen options once, even on the last question.
     let canShowMine = !correct;
     if (!hasNext && !canShowMine) break;
-    let next: "next" | "mine" | "quit";
+    let next: "next" | "fresh" | "mine" | "quit";
     do {
-      next = await prompt.select<"next" | "mine" | "quit">({
-        message: hasNext ? "계속할까요?" : "마지막 문제입니다.",
+      next = await prompt.select<"next" | "fresh" | "mine" | "quit">({
+        message: reviewBreak
+          ? `오답노트 ${session.reviewed}문제를 풀었습니다 (남은 ${noteLeft}문제). 어떻게 할까요?`
+          : hasNext
+            ? "계속할까요?"
+            : "마지막 문제입니다.",
         options: [
-          ...(hasNext ? [{ value: "next" as const, label: "다음 문제" }] : []),
+          ...(reviewBreak
+            ? [
+                { value: "next" as const, label: "오답노트 계속" },
+                { value: "fresh" as const, label: "새 문제 풀기" },
+              ]
+            : hasNext
+              ? [{ value: "next" as const, label: "다음 문제" }]
+              : []),
           ...(canShowMine ? [{ value: "mine" as const, label: "내가 고른 선택지 보기" }] : []),
           { value: "quit" as const, label: "종료" },
         ],
@@ -222,7 +245,8 @@ export async function runQuiz(): Promise<void> {
         canShowMine = false;
       }
     } while (next === "mine" && hasNext);
-    if (next !== "next") break;
+    if (next === "fresh") reviewMode = false;
+    else if (next !== "next") break;
   }
 
   outro(

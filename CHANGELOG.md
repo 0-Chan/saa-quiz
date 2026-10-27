@@ -2,6 +2,10 @@
 
 이 프로젝트의 버전별 변경 사항입니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/)를 따릅니다.
 
+## [Unreleased]
+### 추가
+- 오답노트를 먼저 풀 때 10문제마다 새 문제로 넘어갈지 묻고, 오답노트를 모두 풀면 축하한 뒤 새 문제로 넘어갑니다.
+
 ## [0.4.5] - 2026-10-25
 ### 변경
 - GitHub 정식 Release를 게시하면 npm Trusted Publishing으로 자동 게시합니다.
@@ -74,6 +78,7 @@
 - `saa xp`: 누적 XP와 풀이 현황.
 - 확신도 기반 XP: 확실 +3/−2, 애매 +2/−1, 자신 없음 +1/0.
 
+[Unreleased]: https://github.com/0-Chan/saa-quiz/compare/v0.4.5...HEAD
 [0.4.5]: https://github.com/0-Chan/saa-quiz/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/0-Chan/saa-quiz/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/0-Chan/saa-quiz/compare/v0.4.2...v0.4.3

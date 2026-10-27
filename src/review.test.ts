@@ -6,6 +6,7 @@ import {
   passes,
   pickReview,
   renderWrongNotes,
+  reviewLeft,
   reviewKind,
   reviewSummary,
   tagLine,
@@ -72,6 +73,14 @@ describe("pickReview", () => {
       seen.add(next.id);
     }
     expect(order).toEqual(["c", "u"]);
+  });
+
+  it("reviewLeft counts note questions not yet served", () => {
+    const graduate = q("g", [a("2026-10-08T09:00:00+09:00", false), a("2026-10-09T09:00:00+09:00", true)]);
+    const qs = [right, unsure, confident, graduate];
+    expect(reviewLeft(qs, new Set())).toBe(2);
+    expect(reviewLeft(qs, new Set(["c"]))).toBe(1);
+    expect(reviewLeft(qs, new Set(["c", "u"]))).toBe(0);
   });
 });
 

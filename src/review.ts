@@ -60,9 +60,18 @@ export function reviewSummary(questions: ReviewQuestion[]): ReviewSummary {
   return { total: open.length, confident, unsure: open.length - confident, graduated: questions.filter(graduated).length };
 }
 
+/** Asked after every this many note questions in a session: keep reviewing or move on to new questions. */
+export const REVIEW_BREAK = 10;
+
+const reviewPool = <Q extends ReviewQuestion>(questions: Q[], seen: ReadonlySet<string>) =>
+  questions.filter((q) => !seen.has(q.id) && inReview(q));
+
+/** Note questions not yet served this session. */
+export const reviewLeft = (questions: ReviewQuestion[], seen: ReadonlySet<string>) => reviewPool(questions, seen).length;
+
 /** Next note question for this session: misconceptions first, random within a group. */
 export function pickReview<Q extends ReviewQuestion>(questions: Q[], seen: ReadonlySet<string>, random: () => number = Math.random): Q | null {
-  const pool = questions.filter((q) => !seen.has(q.id) && inReview(q));
+  const pool = reviewPool(questions, seen);
   const confident = pool.filter((q) => reviewKind(q) === "confident");
   const group = confident.length ? confident : pool;
   return group.length ? group[Math.floor(random() * group.length)]! : null;
